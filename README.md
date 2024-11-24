@@ -12,7 +12,6 @@ flavored Markdown tables.
 
 -   Easy-to-use API
 -   Customizable column alignment (left, center, right)
--   Pretty printing for optimal table formatting
 -   Column reordering
 -   Thread-safe operations using `sync.RWMutex`
 -   Error handling for invalid inputs
@@ -57,28 +56,6 @@ func main() {
 This will output:
 
 ```
-| Name | Age |
-|:---- | :-: |
-| John Doe | 30  |
-| Jane Doe | 25  |
-| John Smith | 40  |
-```
-
-### Pretty Printing
-
-Enable pretty printing for automatically adjusted column widths:
-
-```go
-table := tablr.New(os.Stdout, []string{"Name", "Age", "City"}, tablr.WithPretty(true))
-table.AddRow([]string{"John Doe", "30", "New York"})
-table.AddRow([]string{"Jane Doe", "25", "Los Angeles"})
-table.AddRow([]string{"John Smith", "40", "Chicago"})
-table.Render()
-```
-
-This will produce a table with optimally sized columns:
-
-```
 | Name       | Age | City        |
 | :--------- | :-: | :---------- |
 | John Doe   | 30  | New York    |
@@ -91,7 +68,7 @@ This will produce a table with optimally sized columns:
 Customize column alignment:
 
 ```go
-table := tablr.New(os.Stdout, []string{"Name", "Age"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignRight}), tablr.WithPretty(true))
+table := tablr.New(os.Stdout, []string{"Name", "Age"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignRight}))
 table.AddRow([]string{"John Doe", "30"})
 table.Render()
 ```
@@ -109,7 +86,7 @@ This will right-align the "Age" column:
 Reorder columns in the table:
 
 ```go
-table := tablr.New(os.Stdout, []string{"Name", "Age", "City"}, tablr.WithPretty(true))
+table := tablr.New(os.Stdout, []string{"Name", "Age", "City"})
 table.AddRow([]string{"John Doe", "30", "New York"})
 table.AddRow([]string{"Jane Doe", "25", "Los Angeles"})
 table.AddRow([]string{"John Smith", "40", "Chicago"})

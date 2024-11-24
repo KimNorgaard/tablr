@@ -12,7 +12,6 @@ func main() {
 		os.Stdout,
 		[]string{"Name", "Age", "City"},
 		tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
-		tablr.WithPretty(true),
 	)
 
 	// Add some rows
