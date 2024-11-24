@@ -1,5 +1,7 @@
 .DEFAULT_GOAL := build
-.PHONY: test lint vet race bench
+.PHONY: test lint vet race bench build
+
+build: lint test
 
 test:
 	go test ./... -cover
