@@ -1,4 +1,4 @@
-# tablr: A Go package for generating GitHub flavored Markdown tables
+# tablr
 
 [![CI](https://github.com/KimNorgaard/tablr/actions/workflows/ci.yaml/badge.svg)](https://github.com/KimNorgaard/tablr/actions/workflows/ci.yaml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/KimNorgaard/tablr)](https://pkg.go.dev/github.com/KimNorgaard/tablr)
@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/github/license/KimNorgaard/tablr)](LICENSE)
 
 A simple, efficient, and flexible Go package for creating and rendering GitHub
-flavored Markdown tables. Supports custom alignment, pretty printing, and more!
+flavored Markdown tables.
 
 ## Features
 
@@ -16,6 +16,7 @@ flavored Markdown tables. Supports custom alignment, pretty printing, and more!
 -   Column reordering
 -   Thread-safe operations using `sync.RWMutex`
 -   Error handling for invalid inputs
+-   No dependencies
 
 ## Installation
 
