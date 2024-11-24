@@ -57,7 +57,7 @@ This will output:
 
 ```
 | Name       | Age | City        |
-| :--------- | :-: | :---------- |
+|:-----------|:---:|:------------|
 | John Doe   | 30  | New York    |
 | Jane Doe   | 25  | Los Angeles |
 | John Smith | 40  | Chicago     |
@@ -77,7 +77,7 @@ This will right-align the "Age" column:
 
 ```
 | Name     | Age |
-|:-------- | ---:|
+|:---------|----:|
 | John Doe |  30 |
 ```
 
@@ -103,7 +103,7 @@ This will produce a table with reordered columns:
 
 ```
 | City        | Name       | Age |
-| :---------- | :--------- | :-: |
+|:------------|:-----------|:---:|
 | New York    | John Doe   | 30  |
 | Los Angeles | Jane Doe   | 25  |
 | Chicago     | John Smith | 40  |

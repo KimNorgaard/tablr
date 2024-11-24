@@ -25,8 +25,8 @@
 //
 // This will output:
 //
-// | Name | Age |
-// |:---- | :-- |
+// | Name     | Age |
+// |:---------|:----|
 // | John Doe | 30  |
 // | Jane Doe | 25  |
 //
@@ -37,7 +37,7 @@
 // This will output:
 //
 // | Name       | Age | City        |
-// | :--------- | :-: | :---------- |
+// |:-----------|:---:|:------------|
 // | John Doe   | 30  | New York    |
 // | Jane Doe   | 25  | Los Angeles |
 // | John Smith | 40  | Chicago     |
@@ -59,7 +59,7 @@
 // This will output a table with reordered columns:
 //
 // | City        | Name       | Age |
-// | :---------- | :--------- | :-: |
+// |:------------|:-----------|:---:|
 // | New York    | John Doe   | 30  |
 // | Los Angeles | Jane Doe   | 25  |
 //
@@ -80,7 +80,7 @@
 // This will output a table with reordered columns:
 //
 // | City        | Name       | Age |
-// | :---------- | :--------- | :-: |
+// |:------------|:-----------|:---:|
 // | New York    | John Doe   | 30  |
 // | Los Angeles | Jane Doe   | 25  |
 //
@@ -101,7 +101,7 @@
 // This will output a table with reordered columns:
 //
 // | City        | Name       | Age |
-// | :---------- | :--------- | :-: |
+// |:------------|:-----------|:---:|
 // | New York    | John Doe   | 30  |
 // | Los Angeles | Jane Doe   | 25  |
 //
@@ -122,7 +122,7 @@
 // This will output a table with reordered columns:
 //
 // | City        | Name       | Age |
-// | :---------- | :--------- | :-: |
+// |:------------|:-----------|:---:|
 // | New York    | John Doe   | 30  |
 // | Los Angeles | Jane Doe   | 25  |
 // | Chicago     | John Smith | 40  |
