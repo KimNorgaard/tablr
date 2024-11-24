@@ -1,6 +1,6 @@
 # tablr: A Go package for generating GitHub flavored Markdown tables
 
-[![CI](https://github.com/KimNorgaard/tablr/actions/workflows/ci.yml/badge.svg)](https://github.com/KimNorgaard/tablr/actions/workflows/ci.yml)
+[![CI](https://github.com/KimNorgaard/tablr/actions/workflows/ci.yaml/badge.svg)](https://github.com/KimNorgaard/tablr/actions/workflows/ci.yaml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/KimNorgaard/tablr)](https://pkg.go.dev/github.com/KimNorgaard/tablr)
 [![Go Report Card](https://goreportcard.com/badge/github.com/KimNorgaard/tablr)](https://goreportcard.com/report/github.com/KimNorgaard/tablr)
 [![License](https://img.shields.io/github/license/KimNorgaard/tablr)](LICENSE)
