@@ -26,18 +26,18 @@
 // This will output:
 //
 // | Name     | Age |
-// |:---------|:----|
+// |----------|-----|
 // | John Doe | 30  |
 // | Jane Doe | 25  |
 //
 // You can also specify the alignment of each column:
 //
-//	table := tablr.New(os.Stdout, []string{"Name", "Age"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignRight}))
+//	table := tablr.New(os.Stdout, []string{"Name", "Age"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}))
 //
 // This will output:
 //
 // | Name       | Age | City        |
-// |:-----------|:---:|:------------|
+// |:-----------|:---:|------------:|
 // | John Doe   | 30  | New York    |
 // | Jane Doe   | 25  | Los Angeles |
 // | John Smith | 40  | Chicago     |
@@ -59,70 +59,7 @@
 // This will output a table with reordered columns:
 //
 // | City        | Name       | Age |
-// |:------------|:-----------|:---:|
-// | New York    | John Doe   | 30  |
-// | Los Angeles | Jane Doe   | 25  |
-//
-// Column Reordering:
-//
-//	table := tablr.New(os.Stdout, []string{"Name", "Age", "City"})
-//	table.AddRow([]string{"John Doe", "30", "New York"})
-//	table.AddRow([]string{"Jane Doe", "25", "Los Angeles"})
-//	table.AddRow([]string{"John Smith", "40", "Chicago"})
-//
-//	// Reorder columns to "City", "Name", "Age"
-//	err := table.ReorderColumns([]int{2, 0, 1})
-//	if err != nil {
-//		fmt.Println("Error:", err)
-//	}
-//	table.Render()
-//
-// This will output a table with reordered columns:
-//
-// | City        | Name       | Age |
-// |:------------|:-----------|:---:|
-// | New York    | John Doe   | 30  |
-// | Los Angeles | Jane Doe   | 25  |
-//
-// Column Reordering:
-//
-//	table := tablr.New(os.Stdout, []string{"Name", "Age", "City"})
-//	table.AddRow([]string{"John Doe", "30", "New York"})
-//	table.AddRow([]string{"Jane Doe", "25", "Los Angeles"})
-//	table.AddRow([]string{"John Smith", "40", "Chicago"})
-//
-//	// Reorder columns to "City", "Name", "Age"
-//	err := table.ReorderColumns([]int{2, 0, 1})
-//	if err != nil {
-//		fmt.Println("Error:", err)
-//	}
-//	table.Render()
-//
-// This will output a table with reordered columns:
-//
-// | City        | Name       | Age |
-// |:------------|:-----------|:---:|
-// | New York    | John Doe   | 30  |
-// | Los Angeles | Jane Doe   | 25  |
-//
-// Column Reordering:
-//
-//	table := tablr.New(os.Stdout, []string{"Name", "Age", "City"})
-//	table.AddRow([]string{"John Doe", "30", "New York"})
-//	table.AddRow([]string{"Jane Doe", "25", "Los Angeles"})
-//	table.AddRow([]string{"John Smith", "40", "Chicago"})
-//
-//	// Reorder columns to "City", "Name", "Age"
-//	err := table.ReorderColumns([]int{2, 0, 1})
-//	if err != nil {
-//		fmt.Println("Error:", err)
-//	}
-//	table.Render()
-//
-// This will output a table with reordered columns:
-//
-// | City        | Name       | Age |
-// |:------------|:-----------|:---:|
+// |-------------|------------|-----|
 // | New York    | John Doe   | 30  |
 // | Los Angeles | Jane Doe   | 25  |
 // | Chicago     | John Smith | 40  |
