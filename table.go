@@ -30,16 +30,9 @@ type Table struct {
 	alignments   []Alignment
 	columnWidths []int
 	rows         [][]string
-	pretty       bool
 }
 
 type TableOption func(*Table)
-
-func WithPretty(pretty bool) TableOption {
-	return func(t *Table) {
-		t.pretty = pretty
-	}
-}
 
 func WithAlignments(alignments []Alignment) TableOption {
 	return func(t *Table) {
@@ -290,9 +283,7 @@ func (t *Table) GetColumnWidth(index int) (int, error) {
 		return 0, fmt.Errorf("column index out of range: %d, columns: %d", index, len(t.columnWidths))
 	}
 
-	if t.pretty {
-		t.calculateColumnWidths()
-	}
+	t.calculateColumnWidths()
 
 	return t.columnWidths[index], nil
 }
@@ -302,9 +293,7 @@ func (t *Table) GetColumnWidths() []int {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	if t.pretty {
-		t.calculateColumnWidths()
-	}
+	t.calculateColumnWidths()
 
 	return t.columnWidths
 }
@@ -402,9 +391,7 @@ func (t *Table) SetAlignments(alignments []Alignment) error {
 
 // Render renders the table to the writer.
 func (t *Table) Render() {
-	if t.pretty {
-		t.calculateColumnWidths()
-	}
+	t.calculateColumnWidths()
 
 	// Write header column
 	for i, col := range t.columns {

@@ -36,21 +36,6 @@
 //
 // This will output:
 //
-// | Name | Age |
-// |:---- | :-: |
-// | John Doe | 30  |
-// | Jane Doe | 25  |
-//
-// Pretty printing:
-//
-//	table := tablr.New(os.Stdout, []string{"Name", "Age", "City"}, tablr.WithPretty(true))
-//	table.AddRow([]string{"John Doe", "30", "New York"})
-//	table.AddRow([]string{"Jane Doe", "25", "Los Angeles"})
-//	table.AddRow([]string{"John Smith", "40", "Chicago"})
-//	table.Render()
-//
-// This will output a table with automatically adjusted column widths:
-//
 // | Name       | Age | City        |
 // | :--------- | :-: | :---------- |
 // | John Doe   | 30  | New York    |
@@ -59,7 +44,7 @@
 //
 // Column Reordering:
 //
-//	table := tablr.New(os.Stdout, []string{"Name", "Age", "City"}, tablr.WithPretty(true))
+//	table := tablr.New(os.Stdout, []string{"Name", "Age", "City"})
 //	table.AddRow([]string{"John Doe", "30", "New York"})
 //	table.AddRow([]string{"Jane Doe", "25", "Los Angeles"})
 //	table.AddRow([]string{"John Smith", "40", "Chicago"})
@@ -80,7 +65,7 @@
 //
 // Column Reordering:
 //
-//	table := tablr.New(os.Stdout, []string{"Name", "Age", "City"}, tablr.WithPretty(true))
+//	table := tablr.New(os.Stdout, []string{"Name", "Age", "City"})
 //	table.AddRow([]string{"John Doe", "30", "New York"})
 //	table.AddRow([]string{"Jane Doe", "25", "Los Angeles"})
 //	table.AddRow([]string{"John Smith", "40", "Chicago"})
@@ -101,7 +86,7 @@
 //
 // Column Reordering:
 //
-//	table := tablr.New(os.Stdout, []string{"Name", "Age", "City"}, tablr.WithPretty(true))
+//	table := tablr.New(os.Stdout, []string{"Name", "Age", "City"})
 //	table.AddRow([]string{"John Doe", "30", "New York"})
 //	table.AddRow([]string{"Jane Doe", "25", "Los Angeles"})
 //	table.AddRow([]string{"John Smith", "40", "Chicago"})
@@ -122,7 +107,7 @@
 //
 // Column Reordering:
 //
-//	table := tablr.New(os.Stdout, []string{"Name", "Age", "City"}, tablr.WithPretty(true))
+//	table := tablr.New(os.Stdout, []string{"Name", "Age", "City"})
 //	table.AddRow([]string{"John Doe", "30", "New York"})
 //	table.AddRow([]string{"Jane Doe", "25", "Los Angeles"})
 //	table.AddRow([]string{"John Smith", "40", "Chicago"})

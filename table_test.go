@@ -30,7 +30,6 @@ func TestTable_Render(t *testing.T) {
 		columns    []string
 		rows       [][]string
 		alignments func(t *tablr.Table)
-		pretty     func(t *tablr.Table)
 		want       string
 	}{
 		{
@@ -41,7 +40,6 @@ func TestTable_Render(t *testing.T) {
 				{"John Doe", "30", "New York"},
 				{"Jane Smith", "25", "Los Angeles"},
 			},
-			pretty: tablr.WithPretty(true),
 			want: `| Name       | Age |        City |
 |:-----------|:---:|------------:|
 | John Doe   | 30  |    New York |
@@ -56,7 +54,6 @@ func TestTable_Render(t *testing.T) {
 				{"John Doe", "100", "New York"},
 				{"Jane Smith", "255", "Los Angeles"},
 			},
-			pretty: tablr.WithPretty(true),
 			want: `| Name       | Age |        City |
 |:-----------|:---:|------------:|
 | John Doe   | 100 |    New York |
@@ -68,53 +65,21 @@ func TestTable_Render(t *testing.T) {
 			columns:    []string{"Name", "Age", "City"},
 			alignments: tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
 			rows:       [][]string{},
-			pretty:     tablr.WithPretty(true),
 			want: `| Name | Age | City |
 |:-----|:---:|-----:|
 `,
 		},
 		{
-			name:       "Not pretty",
-			columns:    []string{"Name", "Age", "City"},
-			alignments: tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
-			rows: [][]string{
-				{"John Doe", "30", "New York"},
-				{"Jane Smith", "25", "Los Angeles"},
-			},
-			pretty: tablr.WithPretty(false),
-			want: `| Name | Age | City |
-|:-----|:---:|-----:|
-| John Doe | 30  | New York |
-| Jane Smith | 25  | Los Angeles |
-`,
-		},
-		{
-			name:       "Pretty with pipes",
+			name:       "With pipes",
 			columns:    []string{"Name | Lastname", "Age", "City"},
 			alignments: tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
 			rows: [][]string{
 				{"John | Doe", "30", "New | York"},
 				{"Jane | Smith", "25", "Los | Angeles"},
 			},
-			pretty: tablr.WithPretty(true),
 			want: `| Name \| Lastname | Age |           City |
 |:----------------|:---:|---------------:|
 | John \| Doe     | 30  |    New \| York |
-| Jane \| Smith   | 25  | Los \| Angeles |
-`,
-		},
-		{
-			name:       "Not pretty with pipes",
-			columns:    []string{"Name | Lastname", "Age", "City"},
-			alignments: tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
-			rows: [][]string{
-				{"John | Doe", "30", "New | York"},
-				{"Jane | Smith", "25", "Los | Angeles"},
-			},
-			pretty: tablr.WithPretty(false),
-			want: `| Name \| Lastname | Age | City |
-|:----------------|:---:|-----:|
-| John \| Doe     | 30  | New \| York |
 | Jane \| Smith   | 25  | Los \| Angeles |
 `,
 		},
@@ -122,7 +87,7 @@ func TestTable_Render(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
-			table := tablr.New(w, tt.columns, tt.alignments, tt.pretty)
+			table := tablr.New(w, tt.columns, tt.alignments)
 			err := table.AddRows(tt.rows)
 			if err != nil {
 				t.Errorf("Table.AddRows() error = %v", err)
@@ -139,7 +104,7 @@ func TestTable_Render(t *testing.T) {
 func TestTable_Methods(t *testing.T) {
 	// Initialize a table for testing
 	w := &bytes.Buffer{}
-	table := tablr.New(w, []string{"Name", "Age", "City"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}), tablr.WithPretty(true))
+	table := tablr.New(w, []string{"Name", "Age", "City"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}))
 	err := table.AddRows([][]string{
 		{"John Doe", "30", "New York"},
 		{"Jane Smith", "25", "Los Angeles"},
@@ -414,7 +379,7 @@ func TestTable_Methods(t *testing.T) {
 
 func TestTable_ReorderColumns(t *testing.T) {
 	w := &bytes.Buffer{}
-	table := tablr.New(w, []string{"Name", "Age", "City"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}), tablr.WithPretty(true))
+	table := tablr.New(w, []string{"Name", "Age", "City"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}))
 	err := table.AddRows([][]string{
 		{"John Doe", "30", "New York"},
 		{"Jane Smith", "25", "Los Angeles"},
@@ -464,7 +429,7 @@ func TestTable_ReorderColumns(t *testing.T) {
 }
 
 func TestTable_Concurrency(t *testing.T) {
-	table := tablr.New(&bytes.Buffer{}, []string{"Name", "Age"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter}), tablr.WithPretty(true))
+	table := tablr.New(&bytes.Buffer{}, []string{"Name", "Age"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter}))
 
 	t.Log("adding 100 rows")
 	// Start multiple goroutines to append rows concurrently
@@ -520,11 +485,10 @@ func BenchmarkTable_Render(b *testing.B) {
 		b.Run(fmt.Sprintf("%d rows", size), func(b *testing.B) {
 			columns := []string{"Name", "Age", "City"}
 			alignments := tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight})
-			pretty := tablr.WithPretty(true)
 
 			// Prepare the table with the specified number of rows
 			w := &bytes.Buffer{}
-			table := tablr.New(w, columns, alignments, pretty)
+			table := tablr.New(w, columns, alignments)
 			for i := 0; i < size; i++ {
 				table.AddRow([]string{fmt.Sprintf("Name %d", i), fmt.Sprintf("%d", i), fmt.Sprintf("City %d", i)})
 			}
