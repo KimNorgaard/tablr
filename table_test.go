@@ -26,6 +26,227 @@ func TestAlignmentConstants(t *testing.T) {
 
 func TestTable_Render(t *testing.T) {
 	tests := []struct {
+		name    string
+		columns []string
+		rows    [][]string
+		options []tablr.TableOption
+		want    string
+	}{
+		{
+			name:    "Simple table",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{},
+			rows: [][]string{
+				{"John Doe", "30", "New York"},
+				{"Jane Smith", "25", "Los Angeles"},
+			},
+			want: `| Name       | Age | City        |
+|------------|-----|-------------|
+| John Doe   | 30  | New York    |
+| Jane Smith | 25  | Los Angeles |
+`,
+		},
+		{
+			name:    "Simple table with alignment",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
+			},
+			rows: [][]string{
+				{"John Doe", "30", "New York"},
+				{"Jane Smith", "25", "Los Angeles"},
+			},
+			want: `| Name       | Age |        City |
+|:-----------|:---:|------------:|
+| John Doe   | 30  |    New York |
+| Jane Smith | 25  | Los Angeles |
+`,
+		},
+		{
+			name:    "Center aligned with odd length",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
+			},
+			rows: [][]string{
+				{"John Doe", "100", "New York"},
+				{"Jane Smith", "255", "Los Angeles"},
+			},
+			want: `| Name       | Age |        City |
+|:-----------|:---:|------------:|
+| John Doe   | 100 |    New York |
+| Jane Smith | 255 | Los Angeles |
+`,
+		},
+		{
+			name:    "No rows",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
+			},
+			rows: [][]string{},
+			want: `| Name | Age | City |
+|:-----|:---:|-----:|
+`,
+		},
+		{
+			name:    "With pipes",
+			columns: []string{"Name | Lastname", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
+			},
+			rows: [][]string{
+				{"John | Doe", "30", "New | York"},
+				{"Jane | Smith", "25", "Los | Angeles"},
+			},
+			want: `| Name \| Lastname | Age |           City |
+|:----------------|:---:|---------------:|
+| John \| Doe     | 30  |    New \| York |
+| Jane \| Smith   | 25  | Los \| Angeles |
+`,
+		},
+		{
+			name:    "WithAlignment option",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
+				tablr.WithAlignment(1, tablr.AlignRight),
+			},
+			rows: [][]string{
+				{"John Doe", "30", "New York"},
+				{"Jane Smith", "25", "Los Angeles"},
+			},
+			want: `| Name       | Age |        City |
+|:-----------|----:|------------:|
+| John Doe   |  30 |    New York |
+| Jane Smith |  25 | Los Angeles |
+`,
+		},
+		{
+			name:    "WithAlignment option with wrong index",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
+				tablr.WithAlignment(5, tablr.AlignRight),
+			},
+			rows: [][]string{
+				{"John Doe", "30", "New York"},
+				{"Jane Smith", "25", "Los Angeles"},
+			},
+			want: `| Name       | Age |        City |
+|:-----------|:---:|------------:|
+| John Doe   | 30  |    New York |
+| Jane Smith | 25  | Los Angeles |
+`,
+		},
+		{
+			name:    "WithMinColumnWidths option",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
+				tablr.WithMinColumWidths([]int{10, 5, 15}),
+			},
+			rows: [][]string{
+				{"John Doe", "30", "New York"},
+				{"Jane Smith", "25", "Los Angeles"},
+			},
+			want: `| Name       |  Age  |            City |
+|:-----------|:-----:|----------------:|
+| John Doe   |  30   |        New York |
+| Jane Smith |  25   |     Los Angeles |
+`,
+		},
+		{
+			name:    "WithMinColumnWidth option",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
+				tablr.WithMinColumnWidth(1, 10),
+			},
+			rows: [][]string{
+				{"John Doe", "30", "New York"},
+				{"Jane Smith", "25", "Los Angeles"},
+			},
+			want: `| Name       |    Age     |        City |
+|:-----------|:----------:|------------:|
+| John Doe   |     30     |    New York |
+| Jane Smith |     25     | Los Angeles |
+`,
+		},
+		{
+			name:    "WithMinColumnWidth option with wrong index",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
+				tablr.WithMinColumnWidth(5, 10),
+			},
+			rows: [][]string{
+				{"John Doe", "30", "New York"},
+				{"Jane Smith", "25", "Los Angeles"},
+			},
+			want: `| Name       | Age |        City |
+|:-----------|:---:|------------:|
+| John Doe   | 30  |    New York |
+| Jane Smith | 25  | Los Angeles |
+`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := &bytes.Buffer{}
+			table := tablr.New(w, tt.columns, tt.options...)
+			err := table.AddRows(tt.rows)
+			if err != nil {
+				t.Errorf("Table.AddRows() error = %v", err)
+			}
+			table.Render()
+			got := w.String()
+			if got != tt.want {
+				t.Errorf("Table.Render() got = \n%v, want \n%v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTable_WithAlignment(t *testing.T) {
+	columns := []string{"Name", "Age", "City"}
+	alignments := tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight})
+	table := tablr.New(&bytes.Buffer{}, columns, alignments, tablr.WithAlignment(1, tablr.AlignRight))
+
+	got := table.GetAlignments()
+	want := []tablr.Alignment{tablr.AlignLeft, tablr.AlignRight, tablr.AlignRight}
+	if !equalSlices(got, want) {
+		t.Errorf("WithAlignment() got = %v, want %v", got, want)
+	}
+}
+
+func TestTable_WithMinColumnWidths(t *testing.T) {
+	columns := []string{"Name", "Age", "City"}
+	minWidths := []int{10, 5, 15}
+	table := tablr.New(&bytes.Buffer{}, columns, tablr.WithMinColumWidths(minWidths))
+
+	got := table.GetColumnWidths()
+	if !equalSlices(got, minWidths) {
+		t.Errorf("WithMinColumnWidths() got = %v, want %v", got, minWidths)
+	}
+}
+
+func TestTable_WithMinColumnWidth(t *testing.T) {
+	columns := []string{"Name", "Age", "City"}
+	table := tablr.New(&bytes.Buffer{}, columns, tablr.WithMinColumnWidth(1, 10))
+
+	got, err := table.GetColumnWidth(1)
+	if err != nil {
+		t.Errorf("GetColumnWidth() error = %v", err)
+	}
+	want := 10
+	if got != want {
+		t.Errorf("WithMinColumnWidth() got = %v, want %v", got, want)
+	}
+}
+
+func TestTable_String(t *testing.T) {
+	tests := []struct {
 		name       string
 		columns    []string
 		rows       [][]string
@@ -86,16 +307,14 @@ func TestTable_Render(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := &bytes.Buffer{}
-			table := tablr.New(w, tt.columns, tt.alignments)
+			table := tablr.New(nil, tt.columns, tt.alignments)
 			err := table.AddRows(tt.rows)
 			if err != nil {
 				t.Errorf("Table.AddRows() error = %v", err)
 			}
-			table.Render()
-			got := w.String()
+			got := table.String()
 			if got != tt.want {
-				t.Errorf("Table.Render() got = \n%v, want \n%v", got, tt.want)
+				t.Errorf("Table.String() got = \n%v, want \n%v", got, tt.want)
 			}
 		})
 	}
@@ -302,6 +521,26 @@ func TestTable_Methods(t *testing.T) {
 		if !equalSlices(got, want) {
 			t.Errorf("SetAlignments() got = %v, want %v", got, want)
 		}
+
+		err = table.SetAlignments([]tablr.Alignment{tablr.AlignCenter, tablr.AlignLeft})
+		if err != nil {
+			t.Errorf("SetAlignments() error = %v", err)
+		}
+		want = []tablr.Alignment{tablr.AlignCenter, tablr.AlignLeft, tablr.AlignDefault}
+		got = table.GetAlignments()
+		if !equalSlices(got, want) {
+			t.Errorf("SetAlignments() got = %v, want %v", got, want)
+		}
+
+		err = table.SetAlignments([]tablr.Alignment{tablr.AlignCenter, tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight})
+		if err != nil {
+			t.Errorf("SetAlignments() error = %v", err)
+		}
+		want = []tablr.Alignment{tablr.AlignCenter, tablr.AlignLeft, tablr.AlignCenter}
+		got = table.GetAlignments()
+		if !equalSlices(got, want) {
+			t.Errorf("SetAlignments() got = %v, want %v", got, want)
+		}
 	})
 
 	t.Run("GetColumnWidth", func(t *testing.T) {
@@ -325,6 +564,43 @@ func TestTable_Methods(t *testing.T) {
 		t.Logf("rows: %v", table.GetRows())
 		if !equalSlices(got, want) {
 			t.Errorf("GetColumnWidths() got = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("SetColumnMinWidth", func(t *testing.T) {
+		err := table.SetColumnMinWidth(1, 10)
+		if err != nil {
+			t.Errorf("SetColumnMinWidth() error = %v", err)
+		}
+		got, err := table.GetColumnWidth(1)
+		if err != nil {
+			t.Errorf("GetColumnWidth() error = %v", err)
+		}
+		want := 10
+		if got != want {
+			t.Errorf("SetColumnMinWidth() got = %v, want %v", got, want)
+		}
+
+		err = table.SetColumnMinWidth(10, 10) // Invalid index
+		if err == nil {
+			t.Error("SetColumnMinWidth() expected an error for invalid index, but got nil")
+		}
+	})
+
+	t.Run("SetColumnMinWidths", func(t *testing.T) {
+		err := table.SetColumnMinWidths([]int{10, 15, 20})
+		if err != nil {
+			t.Errorf("SetColumnMinWidths() error = %v", err)
+		}
+		got := table.GetColumnWidths()
+		want := []int{10, 15, 20}
+		if !equalSlices(got, want) {
+			t.Errorf("SetColumnMinWidths() got = %v, want %v", got, want)
+		}
+
+		err = table.SetColumnMinWidths([]int{10, 15}) // Invalid length
+		if err == nil {
+			t.Error("SetColumnMinWidths() expected an error for invalid length, but got nil")
 		}
 	})
 
