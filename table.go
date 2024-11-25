@@ -3,23 +3,7 @@ package tablr
 import (
 	"fmt"
 	"io"
-	"strings"
 	"sync"
-)
-
-// Alignment represents the alignment of a column in a Markdown table.
-type Alignment uint8
-
-const (
-	// AlignDefault aligns the column content according to the default
-	// alignment.
-	AlignDefault Alignment = iota
-	// AlignLeft aligns the column content to the left.
-	AlignLeft
-	// AlignCenter aligns the column content to the center.
-	AlignCenter
-	// AlignRight aligns the column content to the right.
-	AlignRight
 )
 
 // Table represents a Markdown table.
@@ -30,42 +14,6 @@ type Table struct {
 	rows            [][]string
 	alignments      []Alignment
 	columnMinWidths []int
-}
-
-type TableOption func(*Table)
-
-// WithAlignments sets the alignments for each column.
-func WithAlignments(alignments []Alignment) TableOption {
-	return func(t *Table) {
-		t.alignments = alignments
-	}
-}
-
-// WithAlignment sets the alignment for a column.
-func WithAlignment(index int, alignment Alignment) TableOption {
-	return func(t *Table) {
-		if index < 0 || index >= len(t.columns) {
-			return
-		}
-		t.alignments[index] = alignment
-	}
-}
-
-// WithMinColumnWidths sets the minimum widths for multiple columns.
-func WithMinColumWidths(minColumnWidths []int) TableOption {
-	return func(t *Table) {
-		t.columnMinWidths = minColumnWidths
-	}
-}
-
-// WithMinColumnWidth sets the minimum width for a column.
-func WithMinColumnWidth(index, minWidth int) TableOption {
-	return func(t *Table) {
-		if index < 0 || index >= len(t.columns) {
-			return
-		}
-		t.columnMinWidths[index] = minWidth
-	}
 }
 
 // New creates a new Markdown table with the given columns and alignments.
@@ -87,8 +35,6 @@ func New(writer io.Writer, columns []string, opts ...TableOption) *Table {
 	for _, opt := range opts {
 		opt(t)
 	}
-
-	t.updateAlignments()
 
 	return t
 }
@@ -289,7 +235,6 @@ func (t *Table) SetColumns(columns []string) error {
 	defer t.mu.Unlock()
 
 	t.columns = columns
-	t.updateAlignments()
 
 	return nil
 }
@@ -418,20 +363,24 @@ func (t *Table) ReorderColumns(newOrder []int) error {
 
 // GetAlignment returns the alignment of the column at the given index.
 func (t *Table) GetAlignment(index int) (Alignment, error) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	if index < 0 || index >= len(t.alignments) {
 		return 0, fmt.Errorf("alignment index out of range: %d, alignments: %d", index, len(t.alignments))
 	}
+
+	t.updateAlignments()
 
 	return t.alignments[index], nil
 }
 
 // GetAlignments returns the alignments of the columns.
 func (t *Table) GetAlignments() []Alignment {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.updateAlignments()
 
 	return t.alignments
 }
@@ -456,56 +405,8 @@ func (t *Table) SetAlignments(alignments []Alignment) error {
 	defer t.mu.Unlock()
 
 	t.alignments = alignments
-	t.updateAlignments()
 
 	return nil
-}
-
-// Render renders the table to the writer.
-func (t *Table) Render() {
-	t.calculateColumnWidths()
-
-	// Write header column
-	for i, col := range t.columns {
-		fmt.Fprint(t.writer, "| ")
-		fmt.Fprint(t.writer, pad(col, t.columnMinWidths[i], t.alignments[i]))
-		fmt.Fprint(t.writer, " ")
-	}
-	fmt.Fprintln(t.writer, "|")
-
-	// Write alignment row
-	for i, align := range t.alignments {
-		fmt.Fprint(t.writer, "|")
-		switch align {
-		case AlignDefault:
-			fmt.Fprint(t.writer, "-", strings.Repeat("-", t.columnMinWidths[i]), "-")
-		case AlignLeft:
-			fmt.Fprint(t.writer, ":", strings.Repeat("-", t.columnMinWidths[i]), "-")
-		case AlignCenter:
-			fmt.Fprint(t.writer, ":", strings.Repeat("-", t.columnMinWidths[i]), ":")
-		case AlignRight:
-			fmt.Fprint(t.writer, "-", strings.Repeat("-", t.columnMinWidths[i]), ":")
-		}
-	}
-	fmt.Fprintln(t.writer, "|")
-
-	// Write data rows
-	for _, row := range t.rows {
-		for i, cell := range row {
-			fmt.Fprint(t.writer, "| ")
-			fmt.Fprint(t.writer, pad(cell, t.columnMinWidths[i], t.alignments[i]))
-			fmt.Fprint(t.writer, " ")
-		}
-		fmt.Fprintln(t.writer, "|")
-	}
-}
-
-// String returns the table as a string.
-func (t *Table) String() string {
-	var sb strings.Builder
-	t.writer = &sb
-	t.Render()
-	return sb.String()
 }
 
 // calculateColumnWidths calculates the width of each column based on the data.
@@ -531,9 +432,8 @@ func (t *Table) columnMinWidth(index int) int {
 }
 
 // updateAlignments updates the alignments slice to match the number of columns.
-// If the alignments slice is longer than the number of columns, the extra
-// elements are removed. If the alignments slice is shorter, the missing elements
-// are appended with the default alignment.
+// If the alignments slice has more elements than the number of columns, remove the extra elements.
+// If the alignments slice has fewer elements, append the missing elements with the default alignment.
 func (t *Table) updateAlignments() {
 	if len(t.columns) == len(t.alignments) {
 		return
@@ -545,30 +445,4 @@ func (t *Table) updateAlignments() {
 	for i := 0; i < len(t.columns)-len(t.alignments); i++ {
 		t.alignments = append(t.alignments, AlignDefault)
 	}
-}
-
-// pad pads a string to the given width with spaces, aligning it as specified.
-func pad(s string, width int, align Alignment) string {
-	if len(s) >= width {
-		return s
-	}
-
-	padding := width - len(s)
-	switch align {
-	case AlignLeft, AlignDefault:
-		return s + strings.Repeat(" ", padding)
-	case AlignCenter:
-		left := padding / 2
-		right := padding - left
-		return strings.Repeat(" ", left) + s + strings.Repeat(" ", right)
-	case AlignRight:
-		return strings.Repeat(" ", padding) + s
-	default:
-		return s
-	}
-}
-
-// escapePipes escapes pipe characters in a string with a backslash.
-func escapePipes(s string) string {
-	return strings.ReplaceAll(s, "|", "\\|")
 }
