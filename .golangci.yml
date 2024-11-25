@@ -9,12 +9,22 @@ linters:
         - gocritic
         - gosec
         - sloglint
+        - unconvert
+        - gocyclo
+        - goconst
+        - gofumpt
+        - revive
 
 run:
     timeout: 5m
     tests: false
 
 linters-settings:
+    gocritic:
+    enabled-tags:
+        - style
+        - diagnostic
+        - performance
     sloglint:
         # Enforce not mixing key-value pairs and attributes.
         # Default: true
@@ -55,12 +65,6 @@ linters-settings:
         config:
             G302: "0640"
             G306: "0640"
-
-# issues:
-#     exclude-rules:
-#         - path: _test\.go
-#           linters:
-#               - errcheck
 
 output:
     print-issued-lines: true
