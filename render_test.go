@@ -173,6 +173,75 @@ func TestTable_Render(t *testing.T) {
 | Jane Smith | 25  | Los Angeles |
 `,
 		},
+		{
+			name:    "WithHeaderAlignment option",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithHeaderAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignLeft, tablr.AlignRight}),
+				tablr.WithHeaderAlignment(2, tablr.AlignRight),
+			},
+			rows: [][]string{
+				{"John Doe", "30", "New York"},
+				{"Jane Smith", "25", "Los Angeles"},
+			},
+			want: `| Name       | Age |        City |
+|------------|-----|-------------|
+| John Doe   | 30  | New York    |
+| Jane Smith | 25  | Los Angeles |
+`,
+		},
+		{
+			name:    "WithAlignment and WithHeaderAlignment option",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter}),
+				tablr.WithHeaderAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignLeft, tablr.AlignRight}),
+				tablr.WithHeaderAlignment(2, tablr.AlignRight),
+			},
+			rows: [][]string{
+				{"John Doe", "30", "New York"},
+				{"Jane Smith", "25", "Los Angeles"},
+			},
+			want: `| Name       | Age |        City |
+|:-----------|:---:|-------------|
+| John Doe   | 30  | New York    |
+| Jane Smith | 25  | Los Angeles |
+`,
+		},
+		{
+			name:    "WithAlignment",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithHeaderAlignments([]tablr.Alignment{tablr.AlignDefault, tablr.AlignDefault, tablr.AlignDefault}),
+				tablr.WithAlignment(1, tablr.AlignLeft),
+			},
+			rows: [][]string{
+				{"John Doe", "30", "New York"},
+				{"Jane Smith", "25", "Los Angeles"},
+			},
+			want: `| Name       | Age | City        |
+|------------|:----|-------------|
+| John Doe   | 30  | New York    |
+| Jane Smith | 25  | Los Angeles |
+`,
+		},
+		{
+			name:    "WithHeaderAlignment option with wrong index",
+			columns: []string{"Name", "Age", "City"},
+			options: []tablr.TableOption{
+				tablr.WithHeaderAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignLeft, tablr.AlignLeft}),
+				tablr.WithHeaderAlignment(5, tablr.AlignRight),
+			},
+			rows: [][]string{
+				{"John Doe", "30", "New York"},
+				{"Jane Smith", "25", "Los Angeles"},
+			},
+			want: `| Name       | Age | City        |
+|------------|-----|-------------|
+| John Doe   | 30  | New York    |
+| Jane Smith | 25  | Los Angeles |
+`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

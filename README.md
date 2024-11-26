@@ -11,7 +11,7 @@ flavored Markdown tables.
 ## Features
 
 -   Easy-to-use API
--   Customizable column alignment (left, center, right)
+-   Customizable column and header alignment (left, center, right)
 -   Column reordering
 -   Thread-safe operations using `sync.RWMutex`
 -   Error handling for invalid inputs
@@ -68,7 +68,10 @@ This will output:
 Customize column alignment:
 
 ```go
-table := tablr.New(os.Stdout, []string{"Name", "Age"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignRight}))
+table := tablr.New(
+    os.Stdout, []string{"Name", "Age"},
+    tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignRight}),
+)
 table.AddRow([]string{"John Doe", "30"})
 table.Render()
 ```
@@ -108,15 +111,6 @@ This will produce a table with reordered columns:
 | Los Angeles | Jane Doe   | 25  |
 | Chicago     | John Smith | 40  |
 ```
-
-### Features
-
--   **`AddRow`, `AddRows`, `GetRow`, `GetRows`, `SetRow`,
-    `SetRows`, `DeleteRow`**: Manage rows
--   **`AddColumn`, `AddColumns`, `GetColumn`, `GetColumns`,
-    `SetColumn`, `SetColumns`, `DeleteColumn`**: Manage columns.
--   **`SetAlignment`, `SetAlignments`**: Change column alignment.
--   **`Reset`**: Clear all rows.
 
 ### Error Handling
 

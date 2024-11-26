@@ -18,9 +18,8 @@ func pad(s string, width int, align Alignment) string {
 		return strings.Repeat(" ", left) + s + strings.Repeat(" ", right)
 	case AlignRight:
 		return strings.Repeat(" ", padding) + s
-	default:
-		return s
 	}
+	return s
 }
 
 // escapePipes escapes pipe characters in a string with a backslash.

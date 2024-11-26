@@ -14,3 +14,7 @@ const (
 	// AlignRight aligns the column content to the right.
 	AlignRight
 )
+
+func (a Alignment) IsValid() bool {
+	return a >= AlignDefault && a <= AlignRight
+}

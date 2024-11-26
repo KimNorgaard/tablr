@@ -96,6 +96,13 @@ func TestPad(t *testing.T) {
 			align:    AlignDefault,
 			expected: "test",
 		},
+		{
+			name:     "AlignDefault with unknown alignment",
+			input:    "test",
+			width:    10,
+			align:    Alignment(10),
+			expected: "test",
+		},
 	}
 
 	for _, tt := range tests {

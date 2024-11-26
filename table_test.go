@@ -198,6 +198,10 @@ func TestTable_Methods(t *testing.T) {
 		if err == nil {
 			t.Error("SetAlignment() expected an error for invalid index, but got nil")
 		}
+		err = table.SetAlignment(1, tablr.Alignment(10)) // Invalid alignment
+		if err == nil {
+			t.Error("SetAlignment() expected an error for invalid alignment, but got nil")
+		}
 	})
 
 	t.Run("SetAlignments", func(t *testing.T) {
@@ -230,6 +234,11 @@ func TestTable_Methods(t *testing.T) {
 		if !equalSlices(got, want) {
 			t.Errorf("SetAlignments() got = %v, want %v", got, want)
 		}
+
+		err = table.SetAlignments([]tablr.Alignment{tablr.AlignCenter, tablr.AlignLeft, tablr.Alignment(10)})
+		if err == nil {
+			t.Error("SetAlignments() expected an error for invalid alignment, but got nil")
+		}
 	})
 
 	t.Run("GetColumnWidth", func(t *testing.T) {
@@ -250,7 +259,6 @@ func TestTable_Methods(t *testing.T) {
 	t.Run("GetColumnWidths", func(t *testing.T) {
 		got := table.GetColumnWidths()
 		want := []int{5, 3, 5}
-		t.Logf("rows: %v", table.GetRows())
 		if !equalSlices(got, want) {
 			t.Errorf("GetColumnWidths() got = %v, want %v", got, want)
 		}
@@ -274,6 +282,16 @@ func TestTable_Methods(t *testing.T) {
 		if err == nil {
 			t.Error("SetColumnMinWidth() expected an error for invalid index, but got nil")
 		}
+
+		err = table.SetColumnMinWidth(1, -1) // Negative width
+		if err != nil {
+			t.Errorf("SetColumnMinWidth() error = %v", err)
+		}
+		got, err = table.GetColumnWidth(1)
+		want = 2
+		if got != want {
+			t.Errorf("SetColumnMinWidth() got = %v, want %v", got, want)
+		}
 	})
 
 	t.Run("SetColumnMinWidths", func(t *testing.T) {
@@ -290,6 +308,16 @@ func TestTable_Methods(t *testing.T) {
 		err = table.SetColumnMinWidths([]int{10, 15}) // Invalid length
 		if err == nil {
 			t.Error("SetColumnMinWidths() expected an error for invalid length, but got nil")
+		}
+
+		err = table.SetColumnMinWidths([]int{10, 15, -1}) // Negative width
+		if err != nil {
+			t.Errorf("SetColumnMinWidths() error = %v", err)
+		}
+		got = table.GetColumnWidths()
+		want = []int{10, 15, 5}
+		if !equalSlices(got, want) {
+			t.Errorf("SetColumnMinWidths() got = %v, want %v", got, want)
 		}
 	})
 
@@ -321,15 +349,72 @@ func TestTable_Methods(t *testing.T) {
 		}
 	})
 
+	t.Run("AddColumn with alignments", func(t *testing.T) {
+		err := table.AddColumn("Age", tablr.WithColumnAlignment(tablr.AlignCenter), tablr.WithColumnHeaderAlignment(tablr.AlignLeft))
+		if err != nil {
+			t.Errorf("AddColumn() error = %v", err)
+		}
+		want := tablr.AlignCenter
+		got, err := table.GetAlignment(3)
+		if err != nil {
+			t.Errorf("GetAlignment() error = %v", err)
+		}
+		if want != got {
+			t.Errorf("AddColumn() got = %v, want %v", got, want)
+		}
+
+		want = tablr.AlignLeft
+		got, err = table.GetHeaderAlignment(3)
+		if err != nil {
+			t.Errorf("GetHeaderAlignment() error = %v", err)
+		}
+		if want != got {
+			t.Errorf("AddColumn() got = %v, want %v", got, want)
+		}
+	})
+
 	t.Run("AddColumns", func(t *testing.T) {
 		err := table.AddColumns([]string{"Zip", "Phone"})
 		if err != nil {
 			t.Errorf("AddColumns() error = %v", err)
 		}
-		want := []string{"First Name", "Location", "Country", "Zip", "Phone"}
+		want := []string{"First Name", "Location", "Country", "Age", "Zip", "Phone"}
 		got := table.GetColumns()
 		if !equalSlices(got, want) {
 			t.Errorf("AddColumns() got = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("GetHeaderAlignment", func(t *testing.T) {
+		_, err = table.GetHeaderAlignment(10) // Invalid index
+		if err == nil {
+			t.Error("GetHeaderAlignment() expected an error for invalid index, but got nil")
+		}
+	})
+
+	t.Run("SetHeaderAlignments", func(t *testing.T) {
+		err := table.SetHeaderAlignments([]tablr.Alignment{tablr.AlignCenter, tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight, tablr.AlignCenter, tablr.AlignLeft})
+		if err != nil {
+			t.Errorf("SetHeaderAlignments() error = %v", err)
+		}
+		err = table.SetHeaderAlignments([]tablr.Alignment{tablr.AlignCenter, tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight, tablr.AlignCenter, tablr.Alignment(10)})
+		if err == nil {
+			t.Error("SetHeaderAlignments() expected an error for invalid alignment, but got nil")
+		}
+	})
+
+	t.Run("SetHeaderAlignment", func(t *testing.T) {
+		err := table.SetHeaderAlignment(1, tablr.AlignRight)
+		if err != nil {
+			t.Errorf("SetHeaderAlignment() error = %v", err)
+		}
+		err = table.SetHeaderAlignment(10, tablr.AlignRight) // Invalid index
+		if err == nil {
+			t.Error("SetHeaderAlignment() expected an error for invalid index, but got nil")
+		}
+		err = table.SetHeaderAlignment(1, tablr.Alignment(10)) // Invalid alignment
+		if err == nil {
+			t.Error("SetHeaderAlignment() expected an error for invalid alignment, but got nil")
 		}
 	})
 
@@ -340,6 +425,30 @@ func TestTable_Methods(t *testing.T) {
 			t.Errorf("Reset() got = %v, want empty slice", got)
 		}
 	})
+}
+
+func TestTable_updateAlignments(t *testing.T) {
+	table := tablr.New(&bytes.Buffer{}, []string{"Name", "Age", "City"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}))
+	err := table.SetHeaderAlignments([]tablr.Alignment{tablr.AlignCenter, tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight, tablr.AlignCenter, tablr.AlignLeft})
+	if err != nil {
+		t.Errorf("SetHeaderAlignments() error = %v", err)
+	}
+	want := []tablr.Alignment{tablr.AlignCenter, tablr.AlignLeft, tablr.AlignCenter}
+	got := table.GetHeaderAlignments()
+	if !equalSlices(got, want) {
+		t.Errorf("SetHeaderAlignments() got = %v, want %v", got, want)
+	}
+
+	err = table.SetHeaderAlignments([]tablr.Alignment{tablr.AlignCenter})
+	if err != nil {
+		t.Errorf("SetHeaderAlignments() error = %v", err)
+	}
+
+	want = []tablr.Alignment{tablr.AlignCenter, tablr.AlignDefault, tablr.AlignDefault}
+	got = table.GetHeaderAlignments()
+	if !equalSlices(got, want) {
+		t.Errorf("SetHeaderAlignments() got = %v, want %v", got, want)
+	}
 }
 
 func TestTable_ReorderColumns(t *testing.T) {
@@ -396,7 +505,6 @@ func TestTable_ReorderColumns(t *testing.T) {
 func TestTable_Concurrency(t *testing.T) {
 	table := tablr.New(&bytes.Buffer{}, []string{"Name", "Age"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter}))
 
-	t.Log("adding 100 rows")
 	// Start multiple goroutines to append rows concurrently
 	var wg sync.WaitGroup
 	for i := 0; i < 100; i++ {
@@ -408,7 +516,6 @@ func TestTable_Concurrency(t *testing.T) {
 	}
 	wg.Wait()
 
-	t.Logf("number of rows: %d", len(table.GetRows()))
 	// Check if the number of rows is correct
 	if got, want := len(table.GetRows()), 100; got != want {
 		t.Errorf("Expected %d rows, but got %d", want, got)

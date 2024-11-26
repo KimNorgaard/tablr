@@ -32,7 +32,11 @@
 //
 // You can also specify the alignment of each column:
 //
-//	table := tablr.New(os.Stdout, []string{"Name", "Age"}, tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}))
+//	table := tablr.New(
+//	    os.Stdout,
+//	    []string{"Name", "Age"},
+//	    tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
+//	)
 //
 // This will output:
 //
@@ -66,12 +70,15 @@
 //
 // Error Handling:
 //
-// Many methods in this package return an error.  Always check for errors.  For example, when accessing a row:
+// Many methods in this package return an error.  Always check for errors.  For
+// example, when accessing a row:
 //
 //		row, err := table.GetRow(0)
 //		if err != nil {
 //			fmt.Println("Error:", err)
 //		}
 //
-//	 Similar error handling should be used with `GetColumn`, `SetRow`, `SetColumn`, `DeleteRow`, `DeleteColumn`, `SetAlignment`, and `SetAlignments`.
+//	 Similar error handling should be used with `GetColumn`, `SetRow`,
+//	 `SetColumn`, `DeleteRow`, `DeleteColumn`, `SetAlignment`, and
+//	 `SetAlignments`.
 package tablr

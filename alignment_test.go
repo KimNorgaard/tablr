@@ -20,3 +20,21 @@ func TestAlignmentConstants(t *testing.T) {
 		t.Error("AlignRight should be 3")
 	}
 }
+
+func TestAlignmentIsValid(t *testing.T) {
+	if !tablr.AlignDefault.IsValid() {
+		t.Error("AlignDefault should be valid")
+	}
+	if !tablr.AlignLeft.IsValid() {
+		t.Error("AlignLeft should be valid")
+	}
+	if !tablr.AlignCenter.IsValid() {
+		t.Error("AlignCenter should be valid")
+	}
+	if !tablr.AlignRight.IsValid() {
+		t.Error("AlignRight should be valid")
+	}
+	if tablr.Alignment(4).IsValid() {
+		t.Error("Alignment(4) should not be valid")
+	}
+}

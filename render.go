@@ -13,7 +13,7 @@ func (t *Table) Render() {
 	// Write header column
 	for i, col := range t.columns {
 		fmt.Fprint(t.writer, "| ")
-		fmt.Fprint(t.writer, pad(col, t.columnMinWidths[i], t.alignments[i]))
+		fmt.Fprint(t.writer, pad(col, t.columnMinWidths[i], t.headerAlignments[i]))
 		fmt.Fprint(t.writer, " ")
 	}
 	fmt.Fprintln(t.writer, "|")
