@@ -4,7 +4,7 @@
 build: lint test
 
 test:
-	go test ./... -cover
+	go test -cover ./...
 
 lint:
 	golangci-lint run ./...
@@ -16,4 +16,4 @@ race:
 	go test -race ./...
 
 bench:
-	go test -bench=.
+	go test -bench=./...
