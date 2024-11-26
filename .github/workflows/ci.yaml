@@ -2,40 +2,13 @@
 name: CI
 
 on:
-    push:
-        branches:
-            - main
-    pull_request:
-        branches:
-            - main
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-
-            - name: Set up Go
-              uses: actions/setup-go@v5
-              with:
-                  go-version-file: ./go.mod
-
-            - name: Install dependencies
-              run: |
-                  go mod download
-                  go mod verify
-
-            - name: golangci-lint
-              uses: golangci/golangci-lint-action@v6
-              with:
-                  version: latest
-
-            - name: Run tests
-              run: go test -race -cover -v ./...
-
-            - name: Run benchmarks
-              run: go test -bench=. ./...
+  build:
+    uses: neticdk/shared-github-actions/.github/workflows/go-ci.yml@main
