@@ -1,71 +1,71 @@
 linters:
-    enable:
-        - gofmt
-        - govet
-        - errcheck
-        - staticcheck
-        - gosimple
-        - ineffassign
-        - gocritic
-        - gosec
-        - sloglint
-        - unconvert
-        - gocyclo
-        - goconst
-        - gofumpt
-        - revive
+  enable:
+    - gofmt
+    - govet
+    - errcheck
+    - staticcheck
+    - gosimple
+    - ineffassign
+    - gocritic
+    - gosec
+    - sloglint
+    - unconvert
+    - gocyclo
+    - goconst
+    - gofumpt
+    - revive
 
 run:
-    timeout: 5m
-    tests: false
+  timeout: 5m
+  tests: false
 
 linters-settings:
-    gocritic:
+  gocritic:
     enabled-tags:
-        - style
-        - diagnostic
-        - performance
-    sloglint:
-        # Enforce not mixing key-value pairs and attributes.
-        # Default: true
-        no-mixed-args: true
-        # Enforce using key-value pairs only (overrides no-mixed-args, incompatible with attr-only).
-        # Default: false
-        kv-only: false
-        # Enforce using attributes only (overrides no-mixed-args, incompatible with kv-only).
-        # Default: false
-        attr-only: true
-        # Enforce not using global loggers.
-        # Values:
-        # - "": disabled
-        # - "all": report all global loggers
-        # - "default": report only the default slog logger
-        # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-global
-        # Default: ""
-        no-global: default
-        # Enforce using methods that accept a context.
-        # Default: false
-        context: all
-        # Enforce using static values for log messages.
-        # Default: false
-        # static-msg: true
-        # Enforce using constants instead of raw keys.
-        # Default: false
-        # no-raw-keys: true
-        # Enforce a single key naming convention.
-        # Values: snake, kebab, camel, pascal
-        # Default: ""
-        # key-naming-case: snake
-        # Enforce putting arguments on separate lines.
-        # Default: false
-        # args-on-sep-lines: false
-    gosec:
-        severity: medium
-        confidence: medium
-        config:
-            G302: "0640"
-            G306: "0640"
+      - style
+      - diagnostic
+      - performance
+  sloglint:
+    # Enforce not mixing key-value pairs and attributes.
+    # Default: true
+    no-mixed-args: true
+    # Enforce using key-value pairs only (overrides no-mixed-args, incompatible with attr-only).
+    # Default: false
+    kv-only: false
+    # Enforce using attributes only (overrides no-mixed-args, incompatible with kv-only).
+    # Default: false
+    attr-only: true
+    # Enforce not using global loggers.
+    # Values:
+    # - "": disabled
+    # - "all": report all global loggers
+    # - "default": report only the default slog logger
+    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-global
+    # Default: ""
+    no-global: default
+    # Enforce using methods that accept a context.
+    # Default: false
+    context: all
+    # Enforce using static values for log messages.
+    # Default: false
+    # static-msg: true
+    # Enforce using constants instead of raw keys.
+    # Default: false
+    # no-raw-keys: true
+    # Enforce a single key naming convention.
+    # Values: snake, kebab, camel, pascal
+    # Default: ""
+    # key-naming-case: snake
+    # Enforce putting arguments on separate lines.
+    # Default: false
+    # args-on-sep-lines: false
+  gosec:
+    severity: medium
+    confidence: medium
+    config:
+      G302: "0640"
+      G306: "0640"
 
 output:
-    print-issued-lines: true
-    print-linter-name: true
+  print-issued-lines: true
+  print-linter-name: true
