@@ -35,10 +35,7 @@ jobs:
                   version: latest
 
             - name: Run tests
-              run: go test -v ./... -cover
+              run: go test -race -cover -v ./...
 
             - name: Run benchmarks
               run: go test -bench=. ./...
-
-            - name: Run race detector
-              run: go test -race ./...
