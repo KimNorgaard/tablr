@@ -5,16 +5,17 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/KimNorgaard/tablr)](https://goreportcard.com/report/github.com/KimNorgaard/tablr)
 [![License](https://img.shields.io/github/license/KimNorgaard/tablr)](LICENSE)
 
-A simple, efficient, and flexible Go package for creating and rendering GitHub
-flavored Markdown tables.
+A Go package for creating and rendering GitHub flavored Markdown tables.
 
 ## Features
 
--   Easy-to-use API
+-   Straightforward API
+-   Flexible row manipulation (add, update, delete)
 -   Customizable column and header alignment (left, center, right)
+-   Customizable column width
 -   Column reordering
--   Thread-safe operations using `sync.RWMutex`
--   Error handling for invalid inputs
+-   Thread-safe
+-   Input validation
 -   No dependencies
 
 ## Installation
