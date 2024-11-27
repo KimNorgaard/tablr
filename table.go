@@ -117,11 +117,6 @@ func (t *Table) SetRows(rows [][]string) {
 	// Initialize newRows with the correct length
 	newRows := make([][]string, len(rows))
 
-	// Initialize columnMinWidths with the current column headers' lengths
-	for i, col := range t.columns {
-		t.columnMinWidths[i] = len(col)
-	}
-
 	// Adjust the length of each row
 	for rowIndex, row := range rows {
 		adjustedRow := t.adjustRowLength(row)
@@ -130,7 +125,7 @@ func (t *Table) SetRows(rows [][]string) {
 			adjustedRow[colIndex] = escapedVal
 			// Update columnMinWidths with the minumum width. This makes sure a
 			// previously set larger columnMinWidths[colIndex] it not used
-			t.columnMinWidths[colIndex] = min(t.columnMinWidths[colIndex], len(escapedVal))
+			t.columnMinWidths[colIndex] = max(t.columnMinWidths[colIndex], len(escapedVal), len(t.columns[colIndex]))
 		}
 		newRows[rowIndex] = adjustedRow
 	}
@@ -553,15 +548,6 @@ func (t *Table) adjustColumnWidths() {
 		t.columnMinWidths = t.columnMinWidths[:len(t.columns)]
 	case colWidthsLen < colLen:
 		t.columnMinWidths = append(t.columnMinWidths, make([]int, colLen-colWidthsLen)...)
-	}
-
-	// Reset column widths if there are no rows
-	if len(t.rows) == 0 {
-		for i, col := range t.columns {
-			if len(col) > t.columnMinWidths[i] {
-				t.columnMinWidths[i] = len(col)
-			}
-		}
 	}
 
 	// Default to column header lenghts

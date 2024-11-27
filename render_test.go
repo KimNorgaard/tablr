@@ -127,16 +127,16 @@ func TestTable_Render(t *testing.T) {
 			columns: []string{"Name", "Age", "City"},
 			options: []tablr.TableOption{
 				tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}),
-				tablr.WithMinColumWidths([]int{10, 5, 15}),
+				tablr.WithMinColumWidths([]int{15, 5, 15}),
 			},
 			rows: [][]string{
 				{"John Doe", "30", "New York"},
 				{"Jane Smith", "25", "Los Angeles"},
 			},
-			want: `| Name       |  Age  |            City |
-|:-----------|:-----:|----------------:|
-| John Doe   |  30   |        New York |
-| Jane Smith |  25   |     Los Angeles |
+			want: `| Name            |  Age  |            City |
+|:----------------|:-----:|----------------:|
+| John Doe        |  30   |        New York |
+| Jane Smith      |  25   |     Los Angeles |
 `,
 		},
 		{
@@ -247,9 +247,22 @@ func TestTable_Render(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
 			table := tablr.New(w, tt.columns, tt.options...)
+			rows2 := make([][]string, len(tt.rows))
+			for i := range tt.rows {
+				rows2[i] = make([]string, len(tt.rows[i]))
+				copy(rows2[i], tt.rows[i])
+			}
 			table.AddRows(tt.rows)
 			table.Render()
 			got := w.String()
+			if got != tt.want {
+				t.Errorf("Table.Render() got = \n%v, want \n%v", got, tt.want)
+			}
+
+			w.Reset()
+			table.SetRows(rows2)
+			table.Render()
+			got = w.String()
 			if got != tt.want {
 				t.Errorf("Table.Render() got = \n%v, want \n%v", got, tt.want)
 			}
