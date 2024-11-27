@@ -6,12 +6,15 @@ type TableOption func(*Table)
 // WithHeaderAlignments sets the alignment for each header.
 func WithHeaderAlignments(alignments []Alignment) TableOption {
 	return func(t *Table) {
-		for _, a := range alignments {
+		copy(t.headerAlignments, alignments)
+		t.adjustAlignments()
+		for i, a := range t.headerAlignments {
 			if !a.IsValid() {
-				return
+				t.headerAlignments[i] = AlignDefault
+				continue
 			}
+			t.headerAlignments[i] = a
 		}
-		t.headerAlignments = alignments
 	}
 }
 
@@ -22,27 +25,32 @@ func WithHeaderAlignment(index int, alignment Alignment) TableOption {
 			return
 		}
 		if !alignment.IsValid() {
-			return
+			alignment = AlignDefault
 		}
 		t.headerAlignments[index] = alignment
+		t.adjustAlignments()
 	}
 }
 
 // WithAlignments sets the alignments for each non-header column.
 func WithAlignments(alignments []Alignment) TableOption {
 	return func(t *Table) {
+		copy(t.columnAlignments, alignments)
+		t.adjustAlignments()
 		// Update the alignments for headers to make sure the column alignments
 		// take precedence over the default alignments.
-		for i, a := range alignments {
+		for i, a := range t.columnAlignments {
 			if !a.IsValid() {
-				return
+				t.columnAlignments[i] = AlignDefault
+				t.headerAlignments[i] = AlignDefault
+				continue
 			}
+			t.columnAlignments[i] = a
 
 			if t.headerAlignments[i] == AlignDefault {
 				t.headerAlignments[i] = a
 			}
 		}
-		t.alignments = alignments
 	}
 }
 
@@ -53,22 +61,21 @@ func WithAlignment(index int, alignment Alignment) TableOption {
 			return
 		}
 		if !alignment.IsValid() {
-			return
+			alignment = AlignDefault
 		}
-		t.alignments[index] = alignment
+		t.columnAlignments[index] = alignment
 		if t.headerAlignments[index] == AlignDefault {
 			t.headerAlignments[index] = alignment
 		}
+		t.adjustAlignments()
 	}
 }
 
 // WithMinColumnWidths sets the minimum widths for multiple columns.
 func WithMinColumWidths(minColumnWidths []int) TableOption {
 	return func(t *Table) {
-		if len(minColumnWidths) != len(t.columns) {
-			return
-		}
 		t.columnMinWidths = minColumnWidths
+		t.adjustColumnWidths()
 	}
 }
 

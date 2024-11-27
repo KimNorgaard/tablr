@@ -8,162 +8,346 @@ import (
 )
 
 func TestTable_WithAlignment(t *testing.T) {
-	t.Run("WithAlignment success", func(t *testing.T) {
-		columns := []string{"Name", "Age", "City"}
-		alignments := tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight})
-		table := tablr.New(&bytes.Buffer{}, columns, alignments, tablr.WithAlignment(1, tablr.AlignRight))
+	tables := []struct {
+		name      string
+		alignment tablr.Alignment
+		want      []tablr.Alignment
+	}{
+		{
+			name:      "WithAlignment success",
+			alignment: tablr.AlignRight,
+			want:      []tablr.Alignment{tablr.AlignDefault, tablr.AlignRight, tablr.AlignDefault},
+		},
+		{
+			name:      "WithAlignment invalid alignment sets alignment to default",
+			alignment: tablr.Alignment(10),
+			want:      []tablr.Alignment{tablr.AlignDefault, tablr.AlignDefault, tablr.AlignDefault},
+		},
+		{
+			name:      "WithAlignment left alignment",
+			alignment: tablr.AlignLeft,
+			want:      []tablr.Alignment{tablr.AlignDefault, tablr.AlignLeft, tablr.AlignDefault},
+		},
+		{
+			name:      "WithAlignment center alignment",
+			alignment: tablr.AlignCenter,
+			want:      []tablr.Alignment{tablr.AlignDefault, tablr.AlignCenter, tablr.AlignDefault},
+		},
+	}
 
-		got := table.GetAlignments()
-		want := []tablr.Alignment{tablr.AlignLeft, tablr.AlignRight, tablr.AlignRight}
-		if !equalSlices(got, want) {
-			t.Errorf("WithAlignment() got = %v, want %v", got, want)
-		}
-	})
+	for _, tt := range tables {
+		t.Run(tt.name, func(t *testing.T) {
+			table := tablr.New(&bytes.Buffer{}, defaultColumns, tablr.WithAlignment(1, tt.alignment))
 
-	t.Run("WithAlignment invalid alignment", func(t *testing.T) {
-		columns := []string{"Name", "Age", "City"}
-		alignments := tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight})
-		table := tablr.New(&bytes.Buffer{}, columns, alignments, tablr.WithAlignment(1, tablr.Alignment(10)))
+			got := table.GetAlignments()
+			if !equalSlices(got, tt.want) {
+				t.Errorf("WithAlignment() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 
-		got := table.GetAlignments()
-		want := []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}
-		if !equalSlices(got, want) {
-			t.Errorf("WithAlignment() got = %v, want %v", got, want)
-		}
-	})
+}
 
-	t.Run("WithAlignments invalid alignment", func(t *testing.T) {
-		columns := []string{"Name", "Age", "City"}
-		alignments := tablr.WithAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.Alignment(10)})
-		table := tablr.New(&bytes.Buffer{}, columns, alignments)
+func TestTable_WithAlignments(t *testing.T) {
+	tables := []struct {
+		name       string
+		alignments []tablr.Alignment
+		want       []tablr.Alignment
+	}{
+		{
+			name:       "WithAlignments invalid alignment sets alignment to default",
+			alignments: []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.Alignment(10)},
+			want:       []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignDefault},
+		},
+		{
+			name:       "WithAlignments all valid alignments",
+			alignments: []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight},
+			want:       []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight},
+		},
+		{
+			name:       "WithAlignments all default alignments",
+			alignments: []tablr.Alignment{tablr.AlignDefault, tablr.AlignDefault, tablr.AlignDefault},
+			want:       []tablr.Alignment{tablr.AlignDefault, tablr.AlignDefault, tablr.AlignDefault},
+		},
+		{
+			name:       "WithAlignments mixed valid and invalid alignments",
+			alignments: []tablr.Alignment{tablr.AlignLeft, tablr.Alignment(10), tablr.AlignRight},
+			want:       []tablr.Alignment{tablr.AlignLeft, tablr.AlignDefault, tablr.AlignRight},
+		},
+		{
+			name:       "WithAlignments more alignments than columns",
+			alignments: []tablr.Alignment{tablr.AlignLeft, tablr.AlignDefault, tablr.AlignRight, tablr.AlignCenter},
+			want:       []tablr.Alignment{tablr.AlignLeft, tablr.AlignDefault, tablr.AlignRight},
+		},
+		{
+			name:       "WithAlignments fewer alignments than columns",
+			alignments: []tablr.Alignment{tablr.AlignLeft, tablr.AlignDefault},
+			want:       []tablr.Alignment{tablr.AlignLeft, tablr.AlignDefault, tablr.AlignDefault},
+		},
+	}
 
-		got := table.GetAlignments()
-		want := []tablr.Alignment{tablr.AlignDefault, tablr.AlignDefault, tablr.AlignDefault}
-		if !equalSlices(got, want) {
-			t.Errorf("WithAlignment() got = %v, want %v", got, want)
-		}
-	})
+	for _, tt := range tables {
+		t.Run(tt.name, func(t *testing.T) {
+			alignments := tablr.WithAlignments(tt.alignments)
+			table := tablr.New(&bytes.Buffer{}, defaultColumns, alignments)
+
+			got := table.GetAlignments()
+			if !equalSlices(got, tt.want) {
+				t.Errorf("WithAlignments() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
 func TestTable_WithMinColumnWidths(t *testing.T) {
-	columns := []string{"Name", "Age", "City"}
-	minWidths := []int{10, 5, 15}
-	table := tablr.New(&bytes.Buffer{}, columns, tablr.WithMinColumWidths(minWidths))
-
-	got := table.GetColumnWidths()
-	if !equalSlices(got, minWidths) {
-		t.Errorf("WithMinColumnWidths() got = %v, want %v", got, minWidths)
+	tables := []struct {
+		name      string
+		minWidths []int
+		want      []int
+		columns   []string
+		rows      [][]string
+	}{
+		{
+			name:      "valid minimum column widths",
+			minWidths: []int{10, 5, 15},
+			want:      []int{10, 5, 15},
+			columns:   defaultColumns,
+		},
+		{
+			name:      "too small minimum column widths should extend with column header lengths",
+			minWidths: []int{10, 5},
+			want:      []int{10, 5, len(defaultColumns[2])},
+			columns:   defaultColumns,
+		},
+		{
+			name:      "too large minimum column widths should truncate using column lengths",
+			minWidths: []int{10, 5, 10, 20},
+			want:      []int{10, 5, 10},
+			columns:   defaultColumns,
+		},
+		{
+			name:      "with rows and minimum width larger than header width",
+			minWidths: []int{0, 10, 0},
+			want:      []int{len(defaultColumns[0]), 10, 8},
+			columns:   defaultColumns,
+			rows:      [][]string{{"John", "42", "New York"}},
+		},
+		{
+			name:      "with no rows and header width smaller than minimum column width",
+			minWidths: []int{0, 10, 0},
+			want:      []int{len(defaultColumns[0]), 10, len(defaultColumns[2])},
+			columns:   defaultColumns,
+		},
+		{
+			name:      "with no rows and header width larger than minimum column width",
+			minWidths: []int{3},
+			want:      []int{8},
+			columns:   []string{"Location"},
+		},
 	}
-}
 
-func TestTable_WithMinColumnWidth(t *testing.T) {
-	columns := []string{"Name", "Age", "City"}
-	table := tablr.New(&bytes.Buffer{}, columns, tablr.WithMinColumnWidth(1, 10))
-
-	got, err := table.GetColumnWidth(1)
-	if err != nil {
-		t.Errorf("GetColumnWidth() error = %v", err)
-	}
-	want := 10
-	if got != want {
-		t.Errorf("WithMinColumnWidth() got = %v, want %v", got, want)
+	for _, tt := range tables {
+		t.Run(tt.name, func(t *testing.T) {
+			table := tablr.New(&bytes.Buffer{}, tt.columns, tablr.WithMinColumWidths(tt.minWidths))
+			if len(tt.rows) > 0 {
+				for _, row := range tt.rows {
+					table.AddRow(row)
+				}
+			}
+			got := table.GetColumnWidths()
+			if !equalSlices(got, tt.want) {
+				t.Errorf("WithMinColumnWidths() got = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestTable_WithHeaderAlignment(t *testing.T) {
-	t.Run("WithHeaderAlignment success", func(t *testing.T) {
-		columns := []string{"Name", "Age", "City"}
-		alignments := tablr.WithHeaderAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight})
-		table := tablr.New(&bytes.Buffer{}, columns, alignments, tablr.WithHeaderAlignment(1, tablr.AlignRight))
+	tables := []struct {
+		name        string
+		alignments  []tablr.Alignment
+		headerIdx   int
+		headerAlign tablr.Alignment
+		want        []tablr.Alignment
+	}{
+		{
+			name:        "WithHeaderAlignment success",
+			alignments:  []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight},
+			headerIdx:   1,
+			headerAlign: tablr.AlignRight,
+			want:        []tablr.Alignment{tablr.AlignLeft, tablr.AlignRight, tablr.AlignRight},
+		},
+		{
+			name:        "WithHeaderAlignment with invalid alignment",
+			alignments:  []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight},
+			headerIdx:   1,
+			headerAlign: tablr.Alignment(10),
+			want:        []tablr.Alignment{tablr.AlignLeft, tablr.AlignDefault, tablr.AlignRight},
+		},
+		{
+			name:        "WithHeaderAlignment all default alignments",
+			alignments:  []tablr.Alignment{tablr.AlignDefault, tablr.AlignDefault, tablr.AlignDefault},
+			headerIdx:   2,
+			headerAlign: tablr.AlignLeft,
+			want:        []tablr.Alignment{tablr.AlignDefault, tablr.AlignDefault, tablr.AlignLeft},
+		},
+		{
+			name:        "WithHeaderAlignment mixed valid and invalid alignments",
+			alignments:  []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight},
+			headerIdx:   0,
+			headerAlign: tablr.Alignment(10),
+			want:        []tablr.Alignment{tablr.AlignDefault, tablr.AlignCenter, tablr.AlignRight},
+		},
+	}
 
-		got := table.GetHeaderAlignments()
-		want := []tablr.Alignment{tablr.AlignLeft, tablr.AlignRight, tablr.AlignRight}
-		if !equalSlices(got, want) {
-			t.Errorf("WithHeaderAlignment() got = %v, want %v", got, want)
-		}
-	})
+	for _, tt := range tables {
+		t.Run(tt.name, func(t *testing.T) {
+			alignments := tablr.WithHeaderAlignments(tt.alignments)
+			table := tablr.New(&bytes.Buffer{}, defaultColumns, alignments, tablr.WithHeaderAlignment(tt.headerIdx, tt.headerAlign))
 
-	t.Run("WithHeaderAlignment with invalid alignment", func(t *testing.T) {
-		columns := []string{"Name", "Age", "City"}
-		alignments := tablr.WithHeaderAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight})
-		table := tablr.New(&bytes.Buffer{}, columns, alignments, tablr.WithHeaderAlignment(1, tablr.Alignment(10)))
+			got := table.GetHeaderAlignments()
+			if !equalSlices(got, tt.want) {
+				t.Errorf("WithHeaderAlignment() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 
-		got := table.GetHeaderAlignments()
-		want := []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight}
-		if !equalSlices(got, want) {
-			t.Errorf("WithHeaderAlignment() got = %v, want %v", got, want)
-		}
-	})
+func TestTable_WithHeaderAlignments(t *testing.T) {
+	tables := []struct {
+		name       string
+		alignments []tablr.Alignment
+		want       []tablr.Alignment
+	}{
+		{
+			name:       "WithHeaderAlignments all valid alignments",
+			alignments: []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight},
+			want:       []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignRight},
+		},
+		{
+			name:       "WithHeaderAlignments with invalid alignment",
+			alignments: []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.Alignment(10)},
+			want:       []tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.AlignDefault},
+		},
+		{
+			name:       "WithHeaderAlignments all default alignments",
+			alignments: []tablr.Alignment{tablr.AlignDefault, tablr.AlignDefault, tablr.AlignDefault},
+			want:       []tablr.Alignment{tablr.AlignDefault, tablr.AlignDefault, tablr.AlignDefault},
+		},
+		{
+			name:       "WithHeaderAlignments mixed valid and invalid alignments",
+			alignments: []tablr.Alignment{tablr.AlignLeft, tablr.Alignment(10), tablr.AlignRight},
+			want:       []tablr.Alignment{tablr.AlignLeft, tablr.AlignDefault, tablr.AlignRight},
+		},
+		{
+			name:       "WithHeaderAlignments more alignments than columns",
+			alignments: []tablr.Alignment{tablr.AlignLeft, tablr.AlignDefault, tablr.AlignRight, tablr.AlignCenter},
+			want:       []tablr.Alignment{tablr.AlignLeft, tablr.AlignDefault, tablr.AlignRight},
+		},
+		{
+			name:       "WithHeaderAlignments fewer alignments than columns",
+			alignments: []tablr.Alignment{tablr.AlignLeft, tablr.AlignDefault},
+			want:       []tablr.Alignment{tablr.AlignLeft, tablr.AlignDefault, tablr.AlignDefault},
+		},
+	}
 
-	t.Run("WithHeaderAlignments with invalid alignment", func(t *testing.T) {
-		columns := []string{"Name", "Age", "City"}
-		alignments := tablr.WithHeaderAlignments([]tablr.Alignment{tablr.AlignLeft, tablr.AlignCenter, tablr.Alignment(10)})
-		table := tablr.New(&bytes.Buffer{}, columns, alignments)
+	for _, tt := range tables {
+		t.Run(tt.name, func(t *testing.T) {
+			alignments := tablr.WithHeaderAlignments(tt.alignments)
+			table := tablr.New(&bytes.Buffer{}, defaultColumns, alignments)
 
-		got := table.GetHeaderAlignments()
-		want := []tablr.Alignment{tablr.AlignDefault, tablr.AlignDefault, tablr.AlignDefault}
-		if !equalSlices(got, want) {
-			t.Errorf("WithHeaderAlignment() got = %v, want %v", got, want)
-		}
-	})
+			got := table.GetHeaderAlignments()
+			if !equalSlices(got, tt.want) {
+				t.Errorf("WithHeaderAlignments() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
 func TestTable_WithColumnAlignment(t *testing.T) {
-	t.Run("WithColumnAlignment success", func(t *testing.T) {
-		columns := []string{"Name", "Age", "City"}
-		table := tablr.New(&bytes.Buffer{}, columns)
-		err := table.AddColumn("test", tablr.WithColumnAlignment(tablr.AlignRight))
-		if err != nil {
-			t.Errorf("AddColumn() error = %v", err)
-		}
+	tables := []struct {
+		name      string
+		alignment tablr.Alignment
+		want      tablr.Alignment
+	}{
+		{
+			name:      "WithColumnAlignment success",
+			alignment: tablr.AlignRight,
+			want:      tablr.AlignRight,
+		},
+		{
+			name:      "WithColumnAlignment with invalid alignment",
+			alignment: tablr.Alignment(10),
+			want:      tablr.AlignDefault,
+		},
+		{
+			name:      "WithColumnAlignment default alignment",
+			alignment: tablr.AlignDefault,
+			want:      tablr.AlignDefault,
+		},
+		{
+			name:      "WithColumnAlignment center alignment",
+			alignment: tablr.AlignCenter,
+			want:      tablr.AlignCenter,
+		},
+	}
 
-		want := tablr.AlignRight
-		got, err := table.GetAlignment(3)
-		if err != nil {
-			t.Errorf("GetAlignment() error = %v", err)
-		}
-		if got != want {
-			t.Errorf("WithColumnAlignment() got = %v, want %v", got, want)
-		}
-	})
+	for _, tt := range tables {
+		t.Run(tt.name, func(t *testing.T) {
+			table := tablr.New(&bytes.Buffer{}, defaultColumns)
+			table.AddColumn("Name", tablr.WithColumnAlignment(tt.alignment))
 
-	t.Run("WithColumnAlignment with invalid alignment", func(t *testing.T) {
-		columns := []string{"Name", "Age", "City"}
-		table := tablr.New(&bytes.Buffer{}, columns)
-		opts := tablr.WithColumnAlignment(tablr.Alignment(10))
-		err := table.AddColumn("test", opts)
-		if err == nil {
-			t.Error("AddColumn() expected an error for invalid alignment, but got nil")
-		}
-	})
+			got, err := table.GetAlignment(3)
+			if err != nil {
+				t.Errorf("GetAlignment() error = %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("WithColumnAlignment() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
 func TestTable_WithColumnHeaderAlignment(t *testing.T) {
-	t.Run("WithColumnHeaderAlignment success", func(t *testing.T) {
-		columns := []string{"Name", "Age", "City"}
-		table := tablr.New(&bytes.Buffer{}, columns)
-		err := table.AddColumn("test", tablr.WithColumnHeaderAlignment(tablr.AlignLeft))
-		if err != nil {
-			t.Errorf("AddColumn() error = %v", err)
-		}
+	tables := []struct {
+		name      string
+		alignment tablr.Alignment
+		want      tablr.Alignment
+	}{
+		{
+			name:      "WithColumnHeaderAlignment success",
+			alignment: tablr.AlignLeft,
+			want:      tablr.AlignLeft,
+		},
+		{
+			name:      "WithColumnHeaderAlignment with invalid alignment",
+			alignment: tablr.Alignment(10),
+			want:      tablr.AlignDefault,
+		},
+		{
+			name:      "WithColumnHeaderAlignment default alignment",
+			alignment: tablr.AlignDefault,
+			want:      tablr.AlignDefault,
+		},
+		{
+			name:      "WithColumnHeaderAlignment center alignment",
+			alignment: tablr.AlignCenter,
+			want:      tablr.AlignCenter,
+		},
+	}
 
-		want := tablr.AlignLeft
-		got, err := table.GetHeaderAlignment(3)
-		if err != nil {
-			t.Errorf("GetAlignment() error = %v", err)
-		}
-		if got != want {
-			t.Errorf("WithColumnHeaderAlignment() got = %v, want %v", got, want)
-		}
-	})
+	for _, tt := range tables {
+		t.Run(tt.name, func(t *testing.T) {
+			table := tablr.New(&bytes.Buffer{}, defaultColumns)
+			table.AddColumn("Name", tablr.WithColumnHeaderAlignment(tt.alignment))
 
-	t.Run("WithColumnHeaderAlignment with invalid alignment", func(t *testing.T) {
-		columns := []string{"Name", "Age", "City"}
-		table := tablr.New(&bytes.Buffer{}, columns)
-		opts := tablr.WithColumnHeaderAlignment(tablr.Alignment(10))
-		err := table.AddColumn("test", opts)
-		if err == nil {
-			t.Error("AddColumn() expected an error for invalid alignment, but got nil")
-		}
-	})
+			got, err := table.GetHeaderAlignment(3)
+			if err != nil {
+				t.Errorf("GetAlignment() error = %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("WithColumnHeaderAlignment() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

@@ -13,7 +13,7 @@ type Table struct {
 	columns          []string
 	rows             [][]string
 	headerAlignments []Alignment
-	alignments       []Alignment
+	columnAlignments []Alignment
 	columnMinWidths  []int
 }
 
@@ -24,7 +24,7 @@ func New(writer io.Writer, columns []string, opts ...TableOption) *Table {
 		writer:           writer,
 		columns:          columns,
 		headerAlignments: make([]Alignment, len(columns)),
-		alignments:       make([]Alignment, len(columns)),
+		columnAlignments: make([]Alignment, len(columns)),
 		columnMinWidths:  make([]int, len(columns)),
 		rows:             make([][]string, 0),
 	}
@@ -34,7 +34,7 @@ func New(writer io.Writer, columns []string, opts ...TableOption) *Table {
 		t.columns[i] = escapePipes(col)
 		t.columnMinWidths[i] = len(col)
 		t.headerAlignments[i] = AlignDefault
-		t.alignments[i] = AlignDefault
+		t.columnAlignments[i] = AlignDefault
 	}
 
 	for _, opt := range opts {
@@ -45,40 +45,44 @@ func New(writer io.Writer, columns []string, opts ...TableOption) *Table {
 }
 
 // AddRow appends a row to the table.
-func (t *Table) AddRow(row []string) error {
+// If the number of columns in the row is less than the number of columns in the
+// table, the row will be padded with empty strings.
+// If the number of columns in the row is greater than the number of columns in
+// the table, the row will be truncated.
+func (t *Table) AddRow(row []string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	return t.addRow(row)
+	t.addRow(row, true)
 }
 
 // addRow appends a row to the table without locking.
-func (t *Table) addRow(row []string) error {
-	if len(row) != len(t.columns) {
-		return fmt.Errorf("incorrect number of values in row, should be %d", len(t.columns))
-	}
+func (t *Table) addRow(row []string, adjust bool) {
+	row = t.adjustRowLength(row)
 
 	for i, val := range row {
 		row[i] = escapePipes(val)
 	}
 
 	t.rows = append(t.rows, row)
-
-	return nil
+	if adjust {
+		t.adjustColumnWidths()
+	}
 }
 
 // AddRows appends multiple rows to the table.
-func (t *Table) AddRows(rows [][]string) error {
+// If the number of columns in a row is less than the number of columns in the
+// table, the row will be padded with empty strings.
+// If the number of columns in a row is greater than the number of columns in
+// the table, the row will be truncated.
+func (t *Table) AddRows(rows [][]string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	for _, row := range rows {
-		if err := t.addRow(row); err != nil {
-			return err
-		}
+		t.addRow(row, false)
 	}
-
-	return nil
+	t.adjustColumnWidths()
 }
 
 // GetRow returns the row at the given index.
@@ -102,18 +106,37 @@ func (t *Table) GetRows() [][]string {
 }
 
 // SetRows sets the rows in the table.
-func (t *Table) SetRows(rows [][]string) error {
+// If the number of columns in a row is less than the number of columns in the
+// table, the row will be padded with empty strings.
+// If the number of columns in a row is greater than the number of columns in
+// the table, the row will be truncated.
+func (t *Table) SetRows(rows [][]string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	for _, row := range rows {
-		for i, val := range row {
-			row[i] = escapePipes(val)
-		}
-	}
-	t.rows = rows
+	// Initialize newRows with the correct length
+	newRows := make([][]string, len(rows))
 
-	return nil
+	// Initialize columnMinWidths with the current column headers' lengths
+	for i, col := range t.columns {
+		t.columnMinWidths[i] = len(col)
+	}
+
+	// Adjust the length of each row
+	for rowIndex, row := range rows {
+		adjustedRow := t.adjustRowLength(row)
+		for colIndex, val := range adjustedRow {
+			escapedVal := escapePipes(val)
+			adjustedRow[colIndex] = escapedVal
+			// Update columnMinWidths with the minumum width. This makes sure a
+			// previously set larger columnMinWidths[colIndex] it not used
+			t.columnMinWidths[colIndex] = min(t.columnMinWidths[colIndex], len(escapedVal))
+		}
+		newRows[rowIndex] = adjustedRow
+	}
+
+	t.rows = newRows
+	t.adjustColumnWidths()
 }
 
 // SetRow sets the row at the given index to the new row.
@@ -133,7 +156,10 @@ func (t *Table) SetRow(index int, row []string) error {
 		row[i] = escapePipes(val)
 	}
 
+	row = t.adjustRowLength(row)
+
 	t.rows[index] = row
+	t.adjustColumnWidths()
 
 	return nil
 }
@@ -150,19 +176,24 @@ func (t *Table) DeleteRow(index int) error {
 	copy(t.rows[index:], t.rows[index+1:])
 	t.rows = t.rows[:len(t.rows)-1]
 
+	t.adjustColumnWidths()
+
 	return nil
 }
 
-// Reset clears all rows from the table.
+// Reset clears all columns and rows from the table.
 func (t *Table) Reset() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	t.columns = make([]string, 0)
 	t.rows = make([][]string, 0)
+
+	t.adjustColumnWidths()
 }
 
 // AddColumn adds a column to the table.
-func (t *Table) AddColumn(col string, opts ...ColumnOption) error {
+func (t *Table) AddColumn(header string, opts ...ColumnOption) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -175,30 +206,32 @@ func (t *Table) AddColumn(col string, opts ...ColumnOption) error {
 		opt(c)
 	}
 
-	return t.addColumn(col, c)
+	t.addColumn(header, c)
 }
 
 // addColumn adds a column to the table without locking.
-func (t *Table) addColumn(column string, c *column) error {
-	column = escapePipes(column)
+func (t *Table) addColumn(header string, c *column) {
+	header = escapePipes(header)
 
 	if !c.alignment.IsValid() {
-		return fmt.Errorf("invalid column alignment: %v", c.alignment)
+		c.alignment = AlignDefault
 	}
 	if !c.headerAlignment.IsValid() {
-		return fmt.Errorf("invalid header alignment: %v", c.headerAlignment)
+		c.headerAlignment = AlignDefault
 	}
 
-	t.columns = append(t.columns, column)
-	t.columnMinWidths = append(t.columnMinWidths, len(column))
+	t.columns = append(t.columns, header)
+	t.columnMinWidths = append(t.columnMinWidths, len(header))
 	t.headerAlignments = append(t.headerAlignments, c.headerAlignment)
-	t.alignments = append(t.alignments, c.alignment)
+	t.columnAlignments = append(t.columnAlignments, c.alignment)
 
-	return nil
+	for i, row := range t.rows {
+		t.rows[i] = append(row, "")
+	}
 }
 
 // AddColumns appends multiple columns to the table.
-func (t *Table) AddColumns(columns []string) error {
+func (t *Table) AddColumns(headers []string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -207,13 +240,9 @@ func (t *Table) AddColumns(columns []string) error {
 		headerAlignment: AlignDefault,
 	}
 
-	for _, column := range columns {
-		if err := t.addColumn(column, col); err != nil {
-			return err
-		}
+	for _, header := range headers {
+		t.addColumn(header, col)
 	}
-
-	return nil
 }
 
 // DeleteColumn deletes the column at the given index.
@@ -234,8 +263,14 @@ func (t *Table) DeleteColumn(index int) error {
 	copy(t.headerAlignments[index:], t.headerAlignments[index+1:])
 	t.headerAlignments = t.headerAlignments[:len(t.headerAlignments)-1]
 
-	copy(t.alignments[index:], t.alignments[index+1:])
-	t.alignments = t.alignments[:len(t.alignments)-1]
+	copy(t.columnAlignments[index:], t.columnAlignments[index+1:])
+	t.columnAlignments = t.columnAlignments[:len(t.columnAlignments)-1]
+
+	for i, row := range t.rows {
+		copy(row[index:], row[index+1:])
+		t.rows[i] = row[:len(row)-1]
+	}
+	t.adjustRowLenghts()
 
 	return nil
 }
@@ -261,13 +296,18 @@ func (t *Table) GetColumns() []string {
 }
 
 // SetColumns sets the headers of the table.
-func (t *Table) SetColumns(columns []string) error {
+// If the new column count is less than the old one, the rows are truncated.
+// If the new column count is greater than the old one, the rows are extended.
+// Be careful when using this method, as it can lead to inconsistent data.
+func (t *Table) SetColumns(columns []string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	t.columns = columns
 
-	return nil
+	t.adjustRowLenghts()
+	t.adjustAlignments()
+	t.adjustColumnWidths()
 }
 
 // SetColumn updates the column at the given index.
@@ -281,21 +321,18 @@ func (t *Table) SetColumn(index int, column string) error {
 
 	t.columns[index] = column
 
+	t.adjustColumnWidths()
+
 	return nil
 }
 
 // GetColumnWidth returns the width of the column at the given index.
-func (t *Table) GetColumnWidth(index int) (int, error) {
+// Returns 0 if column index is out of range.
+func (t *Table) GetColumnWidth(index int) int {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	if index < 0 || index >= len(t.columnMinWidths) {
-		return 0, fmt.Errorf("column index out of range: %d, columns: %d", index, len(t.columnMinWidths))
-	}
-
-	t.calculateColumnWidths()
-
-	return t.columnMinWidths[index], nil
+	return t.columnMinWidth(index)
 }
 
 // GetColumnWidths returns the width of all columns.
@@ -303,13 +340,10 @@ func (t *Table) GetColumnWidths() []int {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	t.calculateColumnWidths()
-
 	return t.columnMinWidths
 }
 
 // SetColumnWidths sets the widths of the given column.
-// A negative value will set the width to 0.
 func (t *Table) SetColumnMinWidth(index, width int) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -319,15 +353,16 @@ func (t *Table) SetColumnMinWidth(index, width int) error {
 	}
 
 	if width < 0 {
-		width = 0
+		width = t.columnMinWidths[index]
 	}
 
 	t.columnMinWidths[index] = width
+	t.adjustColumnWidths()
+
 	return nil
 }
 
 // SetColumnMinWidths sets the minimum widths of the columns.
-// A negative value will set the width to 0.
 func (t *Table) SetColumnMinWidths(widths []int) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -338,10 +373,12 @@ func (t *Table) SetColumnMinWidths(widths []int) error {
 
 	for i, width := range widths {
 		if width < 0 {
-			width = 0
+			widths[i] = t.columnMinWidths[i]
 		}
-		t.columnMinWidths[i] = width
 	}
+
+	t.columnMinWidths = widths
+	t.adjustColumnWidths()
 
 	return nil
 }
@@ -370,17 +407,17 @@ func (t *Table) ReorderColumns(newOrder []int) error {
 	// Reorder columns, alignments, and column widths
 	newColumns := make([]string, len(t.columns))
 	newHeaderAlignments := make([]Alignment, len(t.headerAlignments))
-	newAlignments := make([]Alignment, len(t.alignments))
+	newAlignments := make([]Alignment, len(t.columnAlignments))
 	newColumnMinWidths := make([]int, len(t.columnMinWidths))
 	for i, newIndex := range newOrder {
 		newColumns[i] = t.columns[newIndex]
 		newHeaderAlignments[i] = t.headerAlignments[newIndex]
-		newAlignments[i] = t.alignments[newIndex]
+		newAlignments[i] = t.columnAlignments[newIndex]
 		newColumnMinWidths[i] = t.columnMinWidths[newIndex]
 	}
 	t.columns = newColumns
 	t.headerAlignments = newHeaderAlignments
-	t.alignments = newAlignments
+	t.columnAlignments = newAlignments
 	t.columnMinWidths = newColumnMinWidths
 
 	// Reorder rows
@@ -400,8 +437,6 @@ func (t *Table) GetHeaderAlignments() []Alignment {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	t.updateAlignments()
-
 	return t.headerAlignments
 }
 
@@ -414,8 +449,6 @@ func (t *Table) GetHeaderAlignment(index int) (Alignment, error) {
 		return 0, fmt.Errorf("header alignment index out of range: %d, alignments: %d", index, len(t.headerAlignments))
 	}
 
-	t.updateAlignments()
-
 	return t.headerAlignments[index], nil
 }
 
@@ -424,9 +457,7 @@ func (t *Table) GetAlignments() []Alignment {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	t.updateAlignments()
-
-	return t.alignments
+	return t.columnAlignments
 }
 
 // GetAlignment returns the alignment of the column at the given index.
@@ -434,13 +465,11 @@ func (t *Table) GetAlignment(index int) (Alignment, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if index < 0 || index >= len(t.alignments) {
-		return 0, fmt.Errorf("alignment index out of range: %d, alignments: %d", index, len(t.alignments))
+	if index < 0 || index >= len(t.columnAlignments) {
+		return 0, fmt.Errorf("alignment index out of range: %d, alignments: %d", index, len(t.columnAlignments))
 	}
 
-	t.updateAlignments()
-
-	return t.alignments[index], nil
+	return t.columnAlignments[index], nil
 }
 
 // SetHeaderAlignments sets the header alignments of the columns.
@@ -455,6 +484,7 @@ func (t *Table) SetHeaderAlignments(alignments []Alignment) error {
 	}
 
 	t.headerAlignments = alignments
+	t.adjustAlignments()
 
 	return nil
 }
@@ -473,6 +503,7 @@ func (t *Table) SetHeaderAlignment(index int, alignment Alignment) error {
 	}
 
 	t.headerAlignments[index] = alignment
+	t.adjustAlignments()
 
 	return nil
 }
@@ -488,7 +519,8 @@ func (t *Table) SetAlignments(alignments []Alignment) error {
 		}
 	}
 
-	t.alignments = alignments
+	t.columnAlignments = alignments
+	t.adjustAlignments()
 
 	return nil
 }
@@ -498,21 +530,48 @@ func (t *Table) SetAlignment(index int, alignment Alignment) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if index < 0 || index >= len(t.alignments) {
-		return fmt.Errorf("alignment index out of range: %d, alignments: %d", index, len(t.alignments))
+	if index < 0 || index >= len(t.columnAlignments) {
+		return fmt.Errorf("alignment index out of range: %d, alignments: %d", index, len(t.columnAlignments))
 	}
 
 	if !alignment.IsValid() {
 		return fmt.Errorf("invalid alignment: %v", alignment)
 	}
 
-	t.alignments[index] = alignment
+	t.columnAlignments[index] = alignment
+	t.adjustAlignments()
 
 	return nil
 }
 
-// calculateColumnWidths calculates the width of each column based on the data.
-func (t *Table) calculateColumnWidths() {
+// adjustColumnWidths calculates the width of each column based on the data.
+func (t *Table) adjustColumnWidths() {
+	colLen := len(t.columns)
+	colWidthsLen := len(t.columnMinWidths)
+	switch {
+	case colWidthsLen > colLen:
+		t.columnMinWidths = t.columnMinWidths[:len(t.columns)]
+	case colWidthsLen < colLen:
+		t.columnMinWidths = append(t.columnMinWidths, make([]int, colLen-colWidthsLen)...)
+	}
+
+	// Reset column widths if there are no rows
+	if len(t.rows) == 0 {
+		for i, col := range t.columns {
+			if len(col) > t.columnMinWidths[i] {
+				t.columnMinWidths[i] = len(col)
+			}
+		}
+	}
+
+	// Default to column header lenghts
+	for i, col := range t.columns {
+		if len(col) > t.columnMinWidths[i] {
+			t.columnMinWidths[i] = len(col)
+		}
+	}
+
+	// Override using longest cell value in each column
 	for _, row := range t.rows {
 		for col, cell := range row {
 			width := t.columnMinWidth(col)
@@ -533,27 +592,50 @@ func (t *Table) columnMinWidth(index int) int {
 	return t.columnMinWidths[index]
 }
 
-// updateAlignments updates the alignments and headerAlignments slices to match the number of columns.
+// adjustAlignments updates the alignments and headerAlignments slices to match the number of columns.
 // If the alignments slices have more elements than the number of columns, remove the extra elements.
 // If the alignments slices have fewer elements, append the missing elements with the default alignment.
-func (t *Table) updateAlignments() {
-	if len(t.columns) == len(t.alignments) && len(t.alignments) == len(t.headerAlignments) {
+func (t *Table) adjustAlignments() {
+	columnLen := len(t.columns)
+	columnAlignmentsLen := len(t.columnAlignments)
+	headerAlignmentsLen := len(t.headerAlignments)
+
+	if columnLen == columnAlignmentsLen && columnAlignmentsLen == headerAlignmentsLen {
 		return
 	}
 
-	if len(t.alignments) > len(t.columns) {
-		t.alignments = t.alignments[:len(t.columns)]
-	} else {
-		for i := 0; i < len(t.columns)-len(t.alignments)+1; i++ {
-			t.alignments = append(t.alignments, AlignDefault)
+	truncateOrAppend := func(alignments *[]Alignment, length int) {
+		if len(*alignments) > length {
+			*alignments = (*alignments)[:length]
+		} else {
+			for i := 0; i < length-len(*alignments)+1; i++ {
+				*alignments = append(*alignments, AlignDefault)
+			}
 		}
 	}
 
-	if len(t.headerAlignments) > len(t.columns) {
-		t.headerAlignments = t.headerAlignments[:len(t.columns)]
-	} else {
-		for i := 0; i < len(t.columns)-len(t.headerAlignments)+1; i++ {
-			t.headerAlignments = append(t.headerAlignments, AlignDefault)
-		}
+	truncateOrAppend(&t.columnAlignments, columnLen)
+	truncateOrAppend(&t.headerAlignments, columnLen)
+}
+
+// adjustRowLength adjusts the length of the row to match the number of columns.
+func (t *Table) adjustRowLength(row []string) []string {
+	colLen := len(t.columns)
+	rowLen := len(row)
+
+	switch {
+	case rowLen > colLen:
+		row = row[:colLen]
+	case rowLen < colLen:
+		row = append(row, make([]string, colLen-rowLen)...)
+	}
+
+	return row
+}
+
+// adjustRowLenghts adjusts the length of each row to match the number of columns.
+func (t *Table) adjustRowLenghts() {
+	for i, row := range t.rows {
+		t.rows[i] = t.adjustRowLength(row)
 	}
 }

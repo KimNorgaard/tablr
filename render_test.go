@@ -83,9 +83,9 @@ func TestTable_Render(t *testing.T) {
 				{"Jane | Smith", "25", "Los | Angeles"},
 			},
 			want: `| Name \| Lastname | Age |           City |
-|:----------------|:---:|---------------:|
-| John \| Doe     | 30  |    New \| York |
-| Jane \| Smith   | 25  | Los \| Angeles |
+|:-----------------|:---:|---------------:|
+| John \| Doe      | 30  |    New \| York |
+| Jane \| Smith    | 25  | Los \| Angeles |
 `,
 		},
 		{
@@ -247,10 +247,7 @@ func TestTable_Render(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
 			table := tablr.New(w, tt.columns, tt.options...)
-			err := table.AddRows(tt.rows)
-			if err != nil {
-				t.Errorf("Table.AddRows() error = %v", err)
-			}
+			table.AddRows(tt.rows)
 			table.Render()
 			got := w.String()
 			if got != tt.want {
@@ -314,19 +311,16 @@ func TestTable_String(t *testing.T) {
 				{"Jane | Smith", "25", "Los | Angeles"},
 			},
 			want: `| Name \| Lastname | Age |           City |
-|:----------------|:---:|---------------:|
-| John \| Doe     | 30  |    New \| York |
-| Jane \| Smith   | 25  | Los \| Angeles |
+|:-----------------|:---:|---------------:|
+| John \| Doe      | 30  |    New \| York |
+| Jane \| Smith    | 25  | Los \| Angeles |
 `,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			table := tablr.New(nil, tt.columns, tt.alignments)
-			err := table.AddRows(tt.rows)
-			if err != nil {
-				t.Errorf("Table.AddRows() error = %v", err)
-			}
+			table.AddRows(tt.rows)
 			got := table.String()
 			if got != tt.want {
 				t.Errorf("Table.String() got = \n%v, want \n%v", got, tt.want)

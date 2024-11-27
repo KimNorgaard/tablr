@@ -7,9 +7,6 @@ import (
 
 // Render renders the table to the writer.
 func (t *Table) Render() {
-	t.updateAlignments()
-	t.calculateColumnWidths()
-
 	// Write header column
 	for i, col := range t.columns {
 		fmt.Fprint(t.writer, "| ")
@@ -19,7 +16,7 @@ func (t *Table) Render() {
 	fmt.Fprintln(t.writer, "|")
 
 	// Write alignment row
-	for i, align := range t.alignments {
+	for i, align := range t.columnAlignments {
 		fmt.Fprint(t.writer, "|")
 		switch align {
 		case AlignDefault:
@@ -38,7 +35,7 @@ func (t *Table) Render() {
 	for _, row := range t.rows {
 		for i, cell := range row {
 			fmt.Fprint(t.writer, "| ")
-			fmt.Fprint(t.writer, pad(cell, t.columnMinWidths[i], t.alignments[i]))
+			fmt.Fprint(t.writer, pad(cell, t.columnMinWidths[i], t.columnAlignments[i]))
 			fmt.Fprint(t.writer, " ")
 		}
 		fmt.Fprintln(t.writer, "|")
