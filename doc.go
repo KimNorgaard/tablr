@@ -53,7 +53,8 @@
 //	table.AddRow([]string{"Jane Doe", "25", "Los Angeles"})
 //	table.AddRow([]string{"John Smith", "40", "Chicago"})
 //
-//	// Reorder columns to "City", "Name", "Age"
+// Reorder columns to "City", "Name", "Age":
+//
 //	err := table.ReorderColumns([]int{2, 0, 1})
 //	if err != nil {
 //		fmt.Println("Error:", err)
@@ -73,12 +74,12 @@
 // Many methods in this package return an error.  Always check for errors.  For
 // example, when accessing a row:
 //
-//		row, err := table.GetRow(0)
-//		if err != nil {
-//			fmt.Println("Error:", err)
-//		}
+//	row, err := table.GetRow(0)
+//	if err != nil {
+//		fmt.Println("Error:", err)
+//	}
 //
-//	 Similar error handling should be used with `GetColumn`, `SetRow`,
-//	 `SetColumn`, `DeleteRow`, `DeleteColumn`, `SetAlignment`, and
-//	 `SetAlignments`.
+// Similar error handling should be used with `GetColumn`, `SetRow`,
+// `SetColumn`, `DeleteRow`, `DeleteColumn`, `SetAlignment`, and
+// `SetAlignments`.
 package tablr
