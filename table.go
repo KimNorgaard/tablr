@@ -53,11 +53,12 @@ func (t *Table) AddRow(row []string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	t.addRow(row, true)
+	t.addRowInternal(row)
+	t.adjustColumnWidths()
 }
 
-// addRow appends a row to the table without locking.
-func (t *Table) addRow(row []string, adjust bool) {
+// addRowInternal appends a row to the table without locking.
+func (t *Table) addRowInternal(row []string) {
 	row = t.adjustRowLength(row)
 
 	for i, val := range row {
@@ -65,9 +66,6 @@ func (t *Table) addRow(row []string, adjust bool) {
 	}
 
 	t.rows = append(t.rows, row)
-	if adjust {
-		t.adjustColumnWidths()
-	}
 }
 
 // AddRows appends multiple rows to the table.
@@ -80,7 +78,7 @@ func (t *Table) AddRows(rows [][]string) {
 	defer t.mu.Unlock()
 
 	for _, row := range rows {
-		t.addRow(row, false)
+		t.addRowInternal(row)
 	}
 	t.adjustColumnWidths()
 }
@@ -123,7 +121,7 @@ func (t *Table) SetRows(rows [][]string) {
 		for colIndex, val := range adjustedRow {
 			escapedVal := escapePipes(val)
 			adjustedRow[colIndex] = escapedVal
-			// Update columnMinWidths with the minumum width. This makes sure a
+			// Update columnMinWidths with the minimum width. This makes sure a
 			// previously set larger columnMinWidths[colIndex] it not used
 			t.columnMinWidths[colIndex] = max(t.columnMinWidths[colIndex], len(escapedVal), len(t.columns[colIndex]))
 		}
@@ -201,11 +199,11 @@ func (t *Table) AddColumn(header string, opts ...ColumnOption) {
 		opt(c)
 	}
 
-	t.addColumn(header, c)
+	t.addColumnInternal(header, c)
 }
 
-// addColumn adds a column to the table without locking.
-func (t *Table) addColumn(header string, c *column) {
+// addColumnInternal adds a column to the table without locking.
+func (t *Table) addColumnInternal(header string, c *column) {
 	header = escapePipes(header)
 
 	if !c.alignment.IsValid() {
@@ -236,7 +234,7 @@ func (t *Table) AddColumns(headers []string) {
 	}
 
 	for _, header := range headers {
-		t.addColumn(header, col)
+		t.addColumnInternal(header, col)
 	}
 }
 
@@ -550,7 +548,7 @@ func (t *Table) adjustColumnWidths() {
 		t.columnMinWidths = append(t.columnMinWidths, make([]int, colLen-colWidthsLen)...)
 	}
 
-	// Default to column header lenghts
+	// Default to column header lengths
 	for i, col := range t.columns {
 		if len(col) > t.columnMinWidths[i] {
 			t.columnMinWidths[i] = len(col)
